@@ -1,11 +1,8 @@
-package rvosimulator
+package rvo2_go
 
 var (
 	Sim *RVOSimulator
 )
-
-func init() {
-}
 
 // RVOSimulator :
 type RVOSimulator struct {

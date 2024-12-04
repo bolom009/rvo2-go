@@ -2,116 +2,153 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
-	"strconv"
 
-	monitor "github.com/bolom009/rvo2-go/monitor"
-	rvo "github.com/bolom009/rvo2-go/src/rvosimulator"
+	rvo "github.com/bolom009/rvo2-go"
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
-
-var (
-	RAND_MAX int
-)
-
-func init() {
-	RAND_MAX = 32767
-}
 
 func setupScenario(sim *rvo.RVOSimulator) {
+	sim.SetTimeStep(0.25)
+	sim.SetAgentDefaults(15.0, 10, 5.0, 5.0, 1.5, 0.1, &rvo.Vector2{}) // where is velocity property ?
 
-	for i := 0; i < 1; i++ {
-		for j := 0; j < 1; j++ {
-			id, _ := sim.AddDefaultAgent(&rvo.Vector2{X: 3 + 0.1*rand.Float64(), Y: 0.8 * rand.Float64()})
-			sim.SetAgentPrefVelocity(id, &rvo.Vector2{X: 0 + 0.01*rand.Float64(), Y: -2 - 0.01*rand.Float64()})
-			id, _ = sim.AddDefaultAgent(&rvo.Vector2{X: -5 + 0.1*rand.Float64(), Y: -0.8 * rand.Float64()})
-			sim.SetAgentPrefVelocity(id, &rvo.Vector2{X: 2 + 0.01*rand.Float64(), Y: 1 + 0.01*rand.Float64()})
-			id, _ = sim.AddDefaultAgent(&rvo.Vector2{X: -2 + 0.1*rand.Float64(), Y: 5.5 + -0.8*rand.Float64()})
-			sim.SetAgentPrefVelocity(id, &rvo.Vector2{X: 0 + 0.01*rand.Float64(), Y: -2 + 0.01*rand.Float64()})
-			id, _ = sim.AddDefaultAgent(&rvo.Vector2{X: -2 + 0.1*rand.Float64(), Y: -5.5 + -0.8*rand.Float64()})
-			sim.SetAgentPrefVelocity(id, &rvo.Vector2{X: 0 + 0.01*rand.Float64(), Y: 2 + 0.01*rand.Float64()})
-			id, _ = sim.AddDefaultAgent(&rvo.Vector2{X: -2 + 0.1*rand.Float64(), Y: -5.5 + -0.8*rand.Float64()})
-			sim.SetAgentPrefVelocity(id, &rvo.Vector2{X: 3 + 0.01*rand.Float64(), Y: -2 + 0.01*rand.Float64()})
+	for i := 0; i < 5; i++ {
+		for j := 0; j < 5; j++ {
+			id1, _ := sim.AddDefaultAgent(&rvo.Vector2{X: 55.0 + float64(i)*10.0, Y: 55.0 + float64(j)*10.0})
+			sim.SetAgentGoal(id1, &rvo.Vector2{X: -75.0, Y: -75.0})
+
+			id2, _ := sim.AddDefaultAgent(&rvo.Vector2{X: -55.0 - float64(i)*10.0, Y: 55.0 + float64(j)*10.0})
+			sim.SetAgentGoal(id2, &rvo.Vector2{X: 75.0, Y: -75.0})
+
+			id3, _ := sim.AddDefaultAgent(&rvo.Vector2{X: 55.0 + float64(i)*10.0, Y: -55.0 - float64(j)*10.0})
+			sim.SetAgentGoal(id3, &rvo.Vector2{X: -75.0, Y: 75.0})
+
+			id4, _ := sim.AddDefaultAgent(&rvo.Vector2{X: -55.0 - float64(i)*10.0, Y: -55.0 - float64(j)*10.0})
+			sim.SetAgentGoal(id4, &rvo.Vector2{X: 75.0, Y: 75.0})
 		}
 	}
 
-	// Add (polygonal) obstacles, specifying their vertices in counterclockwise order
 	obstacle1 := []*rvo.Vector2{
-		&rvo.Vector2{X: -1, Y: 4.0},
-		&rvo.Vector2{X: -4.0, Y: 4.0},
-		&rvo.Vector2{X: -4.0, Y: 1},
-		&rvo.Vector2{X: -1, Y: 1},
+		rvo.NewVector2(-10.0, 40.0),
+		rvo.NewVector2(-40.0, 40.0),
+		rvo.NewVector2(-40.0, 10.0),
+		rvo.NewVector2(-10.0, 10.0),
 	}
 	obstacle2 := []*rvo.Vector2{
-		&rvo.Vector2{X: 1, Y: 4.0},
-		&rvo.Vector2{X: 4.0, Y: 4.0},
-		&rvo.Vector2{X: 4.0, Y: 1},
-		&rvo.Vector2{X: 1, Y: 1},
+		rvo.NewVector2(10.0, 40.0),
+		rvo.NewVector2(10.0, 10.0),
+		rvo.NewVector2(40.0, 10.0),
+		rvo.NewVector2(40.0, 40.0),
 	}
 	obstacle3 := []*rvo.Vector2{
-		&rvo.Vector2{X: -1, Y: -4.0},
-		&rvo.Vector2{X: -1, Y: -1},
-		&rvo.Vector2{X: -4.0, Y: -1},
-		&rvo.Vector2{X: -4.0, Y: -4.0},
+		rvo.NewVector2(10.0, -40.0),
+		rvo.NewVector2(40.0, -40.0),
+		rvo.NewVector2(40.0, -10.0),
+		rvo.NewVector2(10.0, -10.0),
 	}
 	obstacle4 := []*rvo.Vector2{
-		&rvo.Vector2{X: 1, Y: -4.0},
-		&rvo.Vector2{X: 4.0, Y: -4.0},
-		&rvo.Vector2{X: 4.0, Y: -1},
-		&rvo.Vector2{X: 1, Y: -1},
+		rvo.NewVector2(-10.0, -40.0),
+		rvo.NewVector2(-10.0, -10.0),
+		rvo.NewVector2(-40.0, -10.0),
+		rvo.NewVector2(-40.0, -40.0),
 	}
 
-	// clockwise order: a wall is formed from inside to outside
-	obstacle5 := []*rvo.Vector2{
-		&rvo.Vector2{X: 6, Y: 6},
-		&rvo.Vector2{X: 6, Y: -6},
-		&rvo.Vector2{X: -6, Y: -6},
-		&rvo.Vector2{X: -6, Y: 6},
-	}
 	sim.AddObstacle(obstacle1)
 	sim.AddObstacle(obstacle2)
 	sim.AddObstacle(obstacle3)
 	sim.AddObstacle(obstacle4)
-	sim.AddObstacle(obstacle5)
 	sim.ProcessObstacles()
 
 	fmt.Printf("Simulation has %v agents and %v obstacle vertices in it.\n", sim.GetNumAgents(), sim.GetNumObstacleVertices())
 	fmt.Printf("Running Simulation...\n\n")
 }
 
-func showStatus(sim *rvo.RVOSimulator, step int) {
-	var agentPositions string
-	agentPositions = ""
-	for j := 0; j < sim.GetNumAgents(); j++ {
-		agentPositions = agentPositions + " (" + strconv.FormatFloat(sim.GetAgentPosition(j).X, 'f', 3, 64) + "," + strconv.FormatFloat(sim.GetAgentPosition(j).Y, 'f', 4, 64) + ") "
+func reachedGoal(sim *rvo.RVOSimulator, distance float64) bool {
+	/* Check if all agents have reached their goals. */
+	for i := 0; i < sim.GetNumAgents(); i++ {
+		position := sim.GetAgentPosition(i)
+		if rvo.Sqr(rvo.Sub(position, sim.GetAgentGoal(i))) > distance {
+			return false
+		}
 	}
-	fmt.Printf("step=%v  t=%v  %v \n", step+1, strconv.FormatFloat(sim.GlobalTime, 'f', 3, 64), agentPositions)
 
+	return true
+}
+
+func setPreferredVelocities(sim *rvo.RVOSimulator) {
+	for i := 0; i < sim.GetNumAgents(); i++ {
+		goalVector := sim.GetAgentGoalVector(i)
+		if rvo.Sqr(goalVector) > 1 {
+			goalVector = rvo.Normalize(goalVector)
+		}
+
+		sim.SetAgentPrefVelocity(i, goalVector)
+	}
+}
+
+func updateVisualization(sim *rvo.RVOSimulator, camera rl.Camera2D) {
+	rl.BeginDrawing()
+	rl.ClearBackground(rl.White)
+	rl.BeginMode2D(camera)
+
+	for i := 0; i < sim.GetNumObstacles(); i++ {
+		rvoObstacle := sim.GetObstacle(i)
+		for i, vec := range rvoObstacle {
+			if i == 0 {
+				continue
+			}
+
+			pos1 := rvoObstacle[i-1]
+			pos2 := vec
+
+			rl.DrawLine(int32(pos1.X), int32(pos1.Y), int32(pos2.X), int32(pos2.Y), rl.Blue)
+		}
+
+		if len(rvoObstacle) > 2 {
+			pos1 := rvoObstacle[0]
+			pos2 := rvoObstacle[len(rvoObstacle)-1]
+
+			rl.DrawLine(int32(pos1.X), int32(pos1.Y), int32(pos2.X), int32(pos2.Y), rl.Blue)
+		}
+	}
+
+	for i := 0; i < sim.GetNumAgents(); i++ {
+		rvoAgent := sim.GetAgent(i)
+		rl.DrawCircle(int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), 1.5, rl.Gray)
+		rl.DrawCircle(int32(rvoAgent.Position.X), int32(rvoAgent.Position.Y), 1.5, rl.Red)
+	}
+
+	rl.EndMode2D()
+	rl.EndDrawing()
 }
 
 func main() {
-	timeStep := 0.20
-	neighborDist := 0.5
-	maxneighbors := 20
-	timeHorizon := 0.5
-	timeHorizonObst := 0.5
-	radius := 0.01
-	maxSpeed := 0.5
-	sim := rvo.NewRVOSimulator(timeStep, neighborDist, maxneighbors, timeHorizon, timeHorizonObst, radius, maxSpeed, &rvo.Vector2{X: 0, Y: 0})
+	var (
+		sim          = rvo.NewEmptyRVOSimulator()
+		width  int32 = 800
+		height int32 = 600
+		camera       = rl.NewCamera2D(
+			rl.NewVector2(0, 0), rl.NewVector2(float32(width/2)*-1, float32(height/2)*-1), 0, 1.0,
+		)
+	)
+
 	setupScenario(sim)
-	// monitor
-	mo := monitor.NewMonitor(sim)
 
-	for step := 0; step < 34; step++ {
+	rl.InitWindow(width, height, "Example: Blocks")
 
+	for {
+		if rl.WindowShouldClose() {
+			break
+		}
+
+		if reachedGoal(sim, 400.0) {
+			break
+		}
+
+		updateVisualization(sim, camera)
+
+		setPreferredVelocities(sim)
 		sim.DoStep()
-		showStatus(sim, step)
+	}
 
-		// add data for monitor
-		mo.AddData(sim)
-	}
-	// run monitor server
-	err := mo.RunServer()
-	if err != nil {
-		fmt.Printf("error occor...: ", err)
-	}
+	rl.CloseWindow()
 }

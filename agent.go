@@ -1,11 +1,8 @@
-package rvosimulator
+package rvo2_go
 
 import (
 	"math"
 )
-
-func init() {
-}
 
 // Agent
 type Agent struct {
@@ -108,7 +105,6 @@ func (a *Agent) ComputeNewVelocity() {
 
 	/* Create obstacle ORCA lines. */
 	for i := 0; i < len(a.ObstacleNeighbors); i++ {
-
 
 		var obstacle1, obstacle2 *Obstacle
 		obstacle1 = a.ObstacleNeighbors[i].Obstacle
@@ -428,7 +424,6 @@ func (a *Agent) ComputeNewVelocity() {
 		a.LinearProgram3(a.OrcaLines, numObstLines, lineFail, a.MaxSpeed)
 	}
 
-
 }
 
 // InsertAgentNeighbor
@@ -645,7 +640,7 @@ func (a *Agent) LinearProgram3(lines []*Line, numObstLines int, beginLine int, r
 			/* Result does not satisfy constraint of line i. */
 			var projLines []*Line
 			projLines = make([]*Line, 0)
-			for i := 0; i < numObstLines; i++{
+			for i := 0; i < numObstLines; i++ {
 				projLines = append(projLines, lines[i])
 			}
 

@@ -1,4 +1,4 @@
-package rvosimulator
+package rvo2_go
 
 import (
 	"math"
@@ -24,8 +24,7 @@ func Flip(vec *Vector2) *Vector2 {
 	return &Vector2{X: -vec.X, Y: -vec.Y}
 }
 
-
-// Sub: 
+// Sub:
 func Sub(vec1 *Vector2, vec2 *Vector2) *Vector2 {
 	return &Vector2{X: vec1.X - vec2.X, Y: vec1.Y - vec2.Y}
 }

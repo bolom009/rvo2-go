@@ -1,16 +1,12 @@
-package rvosimulator
+package rvo2_go
 
 import (
 	"math"
 )
 
 var (
-	MAX_LEAF_SIZE int
+	MAX_LEAF_SIZE int = 10
 )
-
-func init() {
-	MAX_LEAF_SIZE = 10
-}
 
 // KdTree :
 type KdTree struct {

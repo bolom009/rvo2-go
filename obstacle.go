@@ -1,4 +1,4 @@
-package rvosimulator
+package rvo2_go
 
 // Obstacle :
 type Obstacle struct {
