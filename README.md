@@ -2,7 +2,7 @@
 
 Simulations of multiple agents sharing a common workspace have gained increasing attention recently, for various purposes such as crowd simulation, navigating a team of mobile robots, video games, studying natural flocking behavior, traffic engineering, architecture and design, emergency training simulations, etc.
 
-## Requirements for execute example
+## Requirements for executing example
 
 ##### Ubuntu
 
