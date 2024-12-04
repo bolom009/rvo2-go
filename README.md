@@ -20,8 +20,8 @@ To remove console window, build with `-ldflags "-H=windowsgui"`.
 ```
 git clone https://github.com/bolom009/rvo2-go.git
 cd rvo2-go/examples/circle
-go build simple.go
-./simple
+go build circle.go
+./circle
 ```
 
 ### Example
