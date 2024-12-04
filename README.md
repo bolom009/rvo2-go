@@ -9,7 +9,7 @@ There are no explicit version numbers -- all commits on the master branch are su
 
 ```go
 import (
-	monitor "github.com/RuiHirano/rvo2-go/monitor"
+	monitor "github.com/bolom009/rvo2-go/monitor"
 )
 ```
 
@@ -39,7 +39,7 @@ You can watch simulation monitor at localhost:8000!
 ## Building & installing
 
 ```
-git clone https://github.com/RuiHirano/rvo2-go.git
+git clone https://github.com/bolom009/rvo2-go.git
 cd rvo2-go/examples/simple
 go build simple.go
 ./simple
@@ -54,8 +54,8 @@ import (
 	"fmt"
 	"strconv"
 	"math/rand"
-	rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
-	monitor "github.com/RuiHirano/rvo2-go/monitor"
+	rvo "github.com/bolom009/rvo2-go/src/rvosimulator"
+	monitor "github.com/bolom009/rvo2-go/monitor"
 )
 
 var (
@@ -265,7 +265,7 @@ wall is formed from outside to inside.
 this library (rvo2-go) is based on rvo2-library (https://github.com/snape/RVO2).
 
 Please send all bug reports about rvo2-go to issues of
-[rvo2-go](https://github.com/RuiHirano/rvo2-go), and bug
+[rvo2-go](https://github.com/bolom009/rvo2-go), and bug
 report for the RVO2 library itself to [geom@cs.unc.edu](mailto:geom@cs.unc.edu).
 
 The RVO2 authors may be contacted via:

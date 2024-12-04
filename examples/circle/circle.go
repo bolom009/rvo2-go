@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
-	monitor "github.com/RuiHirano/rvo2-go/monitor"
+	rvo "github.com/bolom009/rvo2-go/src/rvosimulator"
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 var (
@@ -35,12 +35,8 @@ func setupScenario(sim *rvo.RVOSimulator) {
 	}
 }
 
-func updateVisualization(sim *rvo.RVOSimulator) {
-	fmt.Printf("Time: %v\n", sim.GetGlobalTime())
+func updateVisualization(sim *rvo.RVOSimulator, camera rl.Camera2D) {
 
-	for i := 0; i < sim.GetNumAgents(); i++ {
-		fmt.Printf("ID: %v,  Position: %v\n", i, sim.GetAgentPosition(i))
-	}
 }
 
 func setPreferredVelocities(sim *rvo.RVOSimulator) {
@@ -60,9 +56,6 @@ func main() {
 	sim := rvo.NewEmptyRVOSimulator()
 	setupScenario(sim)
 
-	// monitor 
-	mo := monitor.NewMonitor(sim)
-
 	for {
 		if sim.IsReachedGoal() {
 			fmt.Printf("Goal \n ")
@@ -73,16 +66,5 @@ func main() {
 
 		setPreferredVelocities(sim)
 		sim.DoStep()
-
-
-		// add data for monitor
-		mo.AddData(sim)
 	}
-
-		// run monitor server
-		err := mo.RunServer()
-		if err != nil{
-			fmt.Printf("error occor...: ", err)
-		}
-	
 }

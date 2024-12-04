@@ -1,3 +1,5 @@
-module github.com/RuiHirano/rvo2-go/examples/roadmap
+module github.com/bolom009/rvo2-go/examples/roadmap
 
-require github.com/RuiHirano/rvo2-go v1.0.0 // indirect
+go 1.23.1
+
+require github.com/bolom009/rvo2-go v1.0.0 // indirect

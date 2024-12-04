@@ -2,27 +2,28 @@ package main
 
 import (
 	"fmt"
-	"strconv"
-	"math/rand"
-	rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
-	monitor "github.com/RuiHirano/rvo2-go/monitor"
-	"github.com/paulmach/orb"
-	"github.com/paulmach/orb/geojson"
 	"io/ioutil"
 	"log"
+	"math/rand"
+	"strconv"
+
+	monitor "github.com/bolom009/rvo2-go/monitor"
+	rvo "github.com/bolom009/rvo2-go/src/rvosimulator"
+	"github.com/paulmach/orb"
+	"github.com/paulmach/orb/geojson"
 )
 
 var (
-	fcs *geojson.FeatureCollection
+	fcs     *geojson.FeatureCollection
 	geofile string
 )
 
-func init(){
+func init() {
 	geofile = "higashiyama.geojson"
 	fcs = loadGeoJson(geofile)
 }
 
-func loadGeoJson(fname string) *geojson.FeatureCollection{
+func loadGeoJson(fname string) *geojson.FeatureCollection {
 
 	bytes, err := ioutil.ReadFile(fname)
 	if err != nil {
@@ -38,8 +39,8 @@ func setupScenario(sim *rvo.RVOSimulator) {
 
 	for i := 0; i < 1; i++ {
 
-		id, _ := sim.AddDefaultAgent(&rvo.Vector2{X: 136.9780 + 0.0001 * rand.Float64(), Y:  35.1560 + 0.0001 * rand.Float64()})
-		goal := &rvo.Vector2{X: 136.9790 + 0.0001 * rand.Float64(), Y:  35.1450 + 0.0001 * rand.Float64()}
+		id, _ := sim.AddDefaultAgent(&rvo.Vector2{X: 136.9780 + 0.0001*rand.Float64(), Y: 35.1560 + 0.0001*rand.Float64()})
+		goal := &rvo.Vector2{X: 136.9790 + 0.0001*rand.Float64(), Y: 35.1450 + 0.0001*rand.Float64()}
 		/*random := rand.Float64()
 		fmt.Printf("random: %v", random)
 		if random > 0.75{
@@ -60,17 +61,17 @@ func setupScenario(sim *rvo.RVOSimulator) {
 	for i, feature := range fcs.Features {
 		multiPosition := feature.Geometry.(orb.MultiLineString)[0]
 		//fmt.Printf("geometry: ", multiPosition)
-				rvoObstacle := []*rvo.Vector2{}
+		rvoObstacle := []*rvo.Vector2{}
 
-		log.Printf("obst: %v\n",i )
-		for _, positionArray := range multiPosition{
-				position := &rvo.Vector2{
-					X: positionArray[0],
-					Y: positionArray[1],
-				}
-				log.Printf("position: %v\n", position)
+		log.Printf("obst: %v\n", i)
+		for _, positionArray := range multiPosition {
+			position := &rvo.Vector2{
+				X: positionArray[0],
+				Y: positionArray[1],
+			}
+			log.Printf("position: %v\n", position)
 
-				rvoObstacle = append(rvoObstacle, position)
+			rvoObstacle = append(rvoObstacle, position)
 		}
 		sim.AddObstacle(rvoObstacle)
 	}
@@ -81,13 +82,13 @@ func setupScenario(sim *rvo.RVOSimulator) {
 	fmt.Printf("Running Simulation...\n\n")
 }
 
-func showStatus(sim *rvo.RVOSimulator, step int){
+func showStatus(sim *rvo.RVOSimulator, step int) {
 	var agentPositions string
-		agentPositions = ""
-		for j := 0; j < sim.GetNumAgents(); j++ {
-			agentPositions = agentPositions + " (" + strconv.FormatFloat(sim.GetAgentPosition(j).X, 'f', 6, 64) + "," + strconv.FormatFloat(sim.GetAgentPosition(j).Y, 'f', 6, 64) + ") "
-		}
-		fmt.Printf("step=%v  t=%v  %v \n", step+1, strconv.FormatFloat(sim.GlobalTime, 'f', 3, 64), agentPositions)
+	agentPositions = ""
+	for j := 0; j < sim.GetNumAgents(); j++ {
+		agentPositions = agentPositions + " (" + strconv.FormatFloat(sim.GetAgentPosition(j).X, 'f', 6, 64) + "," + strconv.FormatFloat(sim.GetAgentPosition(j).Y, 'f', 6, 64) + ") "
+	}
+	fmt.Printf("step=%v  t=%v  %v \n", step+1, strconv.FormatFloat(sim.GlobalTime, 'f', 3, 64), agentPositions)
 
 }
 
@@ -101,14 +102,14 @@ func setPreferredVelocities(sim *rvo.RVOSimulator) {
 func main() {
 	timeStep := float64(1)
 	neighborDist := 0.00005 // どのくらいの距離の相手をNeighborと認識するか?Neighborとの距離をどのくらいに保つか？ぶつかったと認識する距離？
-	maxneighbors := 10   // 周り何体を計算対象とするか
+	maxneighbors := 10      // 周り何体を計算対象とするか
 	timeHorizon := 1.0
 	timeHorizonObst := 1.0
-	radius := 0.00003  // エージェントの半径
+	radius := 0.00003   // エージェントの半径
 	maxSpeed := 0.00001 // エージェントの最大スピード
 	sim := rvo.NewRVOSimulator(timeStep, neighborDist, maxneighbors, timeHorizon, timeHorizonObst, radius, maxSpeed, &rvo.Vector2{X: 0, Y: 0})
 	setupScenario(sim)
-	// monitor 
+	// monitor
 	mo := monitor.NewMonitor(sim)
 
 	for step := 0; step < 150; step++ {
@@ -119,15 +120,15 @@ func main() {
 
 		// add data for monitor
 		mo.AddData(sim)
-		
-		if sim.IsReachedGoal(){
+
+		if sim.IsReachedGoal() {
 			break
 		}
 	}
 
 	// run monitor server
 	err := mo.RunServer()
-	if err != nil{
+	if err != nil {
 		fmt.Printf("error occor...: ", err)
 	}
 

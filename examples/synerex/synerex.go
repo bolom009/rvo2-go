@@ -5,12 +5,11 @@ import (
 	"math"
 	"strconv"
 
-	//rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 
-	rvo "../../src/rvosimulator"
+	rvo "github.com/bolom009/rvo2-go/src/rvosimulator"
 )
 
 var (
