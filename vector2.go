@@ -6,12 +6,12 @@ import (
 
 // Vector2 :
 type Vector2 struct {
-	X float64
-	Y float64
+	X float32
+	Y float32
 }
 
 // NewVector2 :
-func NewVector2(x float64, y float64) *Vector2 {
+func NewVector2(x float32, y float32) *Vector2 {
 	v := &Vector2{
 		X: x,
 		Y: y,
@@ -35,17 +35,17 @@ func Add(vec1 *Vector2, vec2 *Vector2) *Vector2 {
 }
 
 // Mul :
-func Mul(vec1 *Vector2, vec2 *Vector2) float64 {
+func Mul(vec1 *Vector2, vec2 *Vector2) float32 {
 	return vec1.X*vec2.X + vec1.Y*vec2.Y
 }
 
 // MulOne :
-func MulOne(vec *Vector2, s float64) *Vector2 {
+func MulOne(vec *Vector2, s float32) *Vector2 {
 	return &Vector2{X: vec.X * s, Y: vec.Y * s}
 }
 
 // Div :
-func Div(vec *Vector2, s float64) *Vector2 {
+func Div(vec *Vector2, s float32) *Vector2 {
 	return &Vector2{X: vec.X / s, Y: vec.Y / s}
 }
 
@@ -60,12 +60,12 @@ func NotEqual(vec1 *Vector2, vec2 *Vector2) bool {
 }
 
 // MulSum :
-func MulSum(vec *Vector2, s float64) *Vector2 {
+func MulSum(vec *Vector2, s float32) *Vector2 {
 	return Add(vec, MulOne(vec, s))
 }
 
 // DivSum :
-func DivSum(vec *Vector2, s float64) *Vector2 {
+func DivSum(vec *Vector2, s float32) *Vector2 {
 
 	return Add(vec, Div(vec, s))
 }
@@ -81,13 +81,13 @@ func SubSum(vec1 *Vector2, vec2 *Vector2) *Vector2 {
 }
 
 // Sqr :
-func Sqr(vec *Vector2) float64 {
+func Sqr(vec *Vector2) float32 {
 	return Mul(vec, vec)
 }
 
 // Abs :
-func Abs(vec *Vector2) float64 {
-	return math.Sqrt(Mul(vec, vec))
+func Abs(vec *Vector2) float32 {
+	return float32(math.Sqrt(float64(Mul(vec, vec))))
 }
 
 // Normalize :
@@ -96,17 +96,17 @@ func Normalize(vec *Vector2) *Vector2 {
 }
 
 // Det :
-func Det(vec1 *Vector2, vec2 *Vector2) float64 {
+func Det(vec1 *Vector2, vec2 *Vector2) float32 {
 	return vec1.X*vec2.Y - vec1.Y*vec2.X
 }
 
 // LeftOf :
-func LeftOf(vec1 *Vector2, vec2 *Vector2, vec3 *Vector2) float64 {
+func LeftOf(vec1 *Vector2, vec2 *Vector2, vec3 *Vector2) float32 {
 	return Det(Sub(vec1, vec3), Sub(vec2, vec1))
 }
 
 // DistSqPointLineSegment :
-func DistSqPointLineSegment(vec1 *Vector2, vec2 *Vector2, vec3 *Vector2) float64 {
+func DistSqPointLineSegment(vec1 *Vector2, vec2 *Vector2, vec3 *Vector2) float32 {
 	r := Mul(Sub(vec3, vec1), Sub(vec2, vec1)) / Sqr(Sub(vec2, vec1))
 
 	if r < 0 {
