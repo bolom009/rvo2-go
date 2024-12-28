@@ -4,7 +4,9 @@ import (
 	"math"
 )
 
-// Agent
+const RvoEpsilon float32 = 0.00001 //A sufficiently small positive number.
+
+// Agent represent structure of rvo agent
 type Agent struct {
 	ID                uint16
 	Position          *Vector2
@@ -23,13 +25,13 @@ type Agent struct {
 	Goal              *Vector2
 }
 
-// ObstacleNeighbor :
+// ObstacleNeighbor represent near rvo obstacle
 type ObstacleNeighbor struct {
 	DistSq   float32
 	Obstacle *Obstacle
 }
 
-// AgentNeighbor :
+// AgentNeighbor represent near rvo agent
 type AgentNeighbor struct {
 	DistSq float32
 	Agent  *Agent
@@ -39,14 +41,6 @@ type AgentNeighbor struct {
 type Line struct {
 	Point     *Vector2
 	Direction *Vector2
-}
-
-var (
-	RVO_EPSILON float32 //A sufficiently small positive number.
-)
-
-func init() {
-	RVO_EPSILON = 0.00001
 }
 
 // NewEmptyAgent constructor for creating an empty agent
@@ -101,7 +95,7 @@ func (a *Agent) ComputeNeighbors() {
 func (a *Agent) ComputeNewVelocity() {
 	a.OrcaLines = make([]*Line, 0, len(a.ObstacleNeighbors))
 
-	invTimeHorizonObst := float32(1) / a.TimeHorizonObst
+	invTimeHorizonObst := float32(1.0) / a.TimeHorizonObst
 
 	/* Create obstacle ORCA lines. */
 	for i := 0; i < len(a.ObstacleNeighbors); i++ {
@@ -118,11 +112,10 @@ func (a *Agent) ComputeNewVelocity() {
 		 * Check if velocity obstacle of obstacle is already taken care of by
 		 * previously constructed obstacle ORCA lines.
 		 */
-		var alreadyCovered bool
-		alreadyCovered = false
+		var alreadyCovered bool = false
 
 		for j := 0; j < len(a.OrcaLines); j++ {
-			if Det(Sub(MulOne(relativePosition1, invTimeHorizonObst), a.OrcaLines[j].Point), a.OrcaLines[j].Direction)-invTimeHorizonObst*a.Radius >= -RVO_EPSILON && Det(Sub(MulOne(relativePosition2, invTimeHorizonObst), a.OrcaLines[j].Point), a.OrcaLines[j].Direction)-invTimeHorizonObst*a.Radius >= -RVO_EPSILON {
+			if Det(Sub(MulOne(relativePosition1, invTimeHorizonObst), a.OrcaLines[j].Point), a.OrcaLines[j].Direction)-invTimeHorizonObst*a.Radius >= -RvoEpsilon && Det(Sub(MulOne(relativePosition2, invTimeHorizonObst), a.OrcaLines[j].Point), a.OrcaLines[j].Direction)-invTimeHorizonObst*a.Radius >= -RvoEpsilon {
 				alreadyCovered = true
 				break
 			}
@@ -425,13 +418,13 @@ func (a *Agent) ComputeNewVelocity() {
 	}
 }
 
-// InsertAgentNeighbor
-func (a *Agent) InsertAgentNeighbor(agent *Agent, rangeSq float32) {
+// InsertAgentNeighbor inserting agent neighbor
+func (a *Agent) InsertAgentNeighbor(agent *Agent, rangeSq *float32) {
 	if a != agent {
 		distSq := Sqr(Sub(a.Position, agent.Position))
 
 		// 2Agent間の距離が半径よりも近かった場合
-		if distSq < rangeSq {
+		if distSq < *rangeSq {
 			if uint16(len(a.AgentNeighbors)) < a.MaxNeighbors {
 				a.AgentNeighbors = append(a.AgentNeighbors, &AgentNeighbor{DistSq: distSq, Agent: agent})
 			}
@@ -453,13 +446,13 @@ func (a *Agent) InsertAgentNeighbor(agent *Agent, rangeSq float32) {
 			}
 
 			if uint16(len(a.AgentNeighbors)) == a.MaxNeighbors {
-				rangeSq = a.AgentNeighbors[len(a.AgentNeighbors)-1].DistSq
+				*rangeSq = a.AgentNeighbors[len(a.AgentNeighbors)-1].DistSq
 			}
 		}
 	}
 }
 
-// InsertObstacleNeighbor
+// InsertObstacleNeighbor inserting obstacle neighbor
 func (a *Agent) InsertObstacleNeighbor(obstacle *Obstacle, rangeSq float32) {
 	nextObstacle := obstacle.NextObstacle
 
@@ -486,10 +479,10 @@ func (a *Agent) InsertObstacleNeighbor(obstacle *Obstacle, rangeSq float32) {
 	}
 }
 
-// Update
+// Update agents velocity and position
 func (a *Agent) Update() {
 	a.Velocity = a.NewVelocity
-	a.Position = Add(a.Position, MulOne(a.Velocity, float32(Sim.TimeStep)))
+	a.Position = Add(a.Position, MulOne(a.Velocity, Sim.TimeStep))
 }
 
 // LinearProgram1
@@ -519,7 +512,7 @@ func (a *Agent) LinearProgram1(lines []*Line, lineNo int, radius float32, optVel
 		denominator = Det(lines[lineNo].Direction, lines[i].Direction)
 		numerator = Det(lines[i].Direction, Sub(lines[lineNo].Point, lines[i].Point))
 
-		if float32(math.Abs(float64(denominator))) <= RVO_EPSILON {
+		if float32(math.Abs(float64(denominator))) <= RvoEpsilon {
 			/* Lines lineNo and i are (almost) parallel. */
 			if numerator < 0 {
 				return false
@@ -648,7 +641,7 @@ func (a *Agent) LinearProgram3(lines []*Line, numObstLines int, beginLine int, r
 				var determinant float32
 				determinant = Det(lines[i].Direction, lines[j].Direction)
 
-				if float32(math.Abs(float64(determinant))) <= RVO_EPSILON {
+				if float32(math.Abs(float64(determinant))) <= RvoEpsilon {
 					/* Line i and line j are parallel. */
 					if Mul(lines[i].Direction, lines[j].Direction) > 0 {
 						/* Line i and line j point in the same direction. */

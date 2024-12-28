@@ -230,9 +230,9 @@ func (kt *KdTree) BuildObstacleTreeRecursive(obstacles []*Obstacle) *ObstacleTre
 				j1LeftOfI := LeftOf(obstacleI1.Point, obstacleI2.Point, obstacleJ1.Point)
 				j2LeftOfI := LeftOf(obstacleI1.Point, obstacleI2.Point, obstacleJ2.Point)
 
-				if j1LeftOfI >= -RVO_EPSILON && j2LeftOfI >= -RVO_EPSILON {
+				if j1LeftOfI >= -RvoEpsilon && j2LeftOfI >= -RvoEpsilon {
 					leftSize++
-				} else if j1LeftOfI <= RVO_EPSILON && j2LeftOfI <= RVO_EPSILON {
+				} else if j1LeftOfI <= RvoEpsilon && j2LeftOfI <= RvoEpsilon {
 					rightSize++
 				} else {
 					leftSize++
@@ -279,10 +279,10 @@ func (kt *KdTree) BuildObstacleTreeRecursive(obstacles []*Obstacle) *ObstacleTre
 			j1LeftOfI = LeftOf(obstacleI1.Point, obstacleI2.Point, obstacleJ1.Point)
 			j2LeftOfI = LeftOf(obstacleI1.Point, obstacleI2.Point, obstacleJ2.Point)
 
-			if j1LeftOfI >= -RVO_EPSILON && j2LeftOfI >= -RVO_EPSILON {
+			if j1LeftOfI >= -RvoEpsilon && j2LeftOfI >= -RvoEpsilon {
 				leftObstacles[leftCounter] = obstacles[j]
 				leftCounter++
-			} else if j1LeftOfI <= RVO_EPSILON && j2LeftOfI <= RVO_EPSILON {
+			} else if j1LeftOfI <= RvoEpsilon && j2LeftOfI <= RvoEpsilon {
 				rightObstacles[rightCounter] = obstacles[j]
 				rightCounter++
 			} else {
@@ -350,7 +350,7 @@ func (kt *KdTree) DeleteObstacleTree(node *ObstacleTreeNode) {
 func (kt *KdTree) QueryAgentTreeRecursive(agent *Agent, rangeSq float32, node int) {
 	if kt.AgentTree[node].End-kt.AgentTree[node].Begin <= MAX_LEAF_SIZE {
 		for i := kt.AgentTree[node].Begin; i < kt.AgentTree[node].End; i++ {
-			agent.InsertAgentNeighbor(kt.Agents[i], rangeSq)
+			agent.InsertAgentNeighbor(kt.Agents[i], &rangeSq)
 		}
 	} else {
 		var distSqLeft, distSqRight float32

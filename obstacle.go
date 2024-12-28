@@ -10,7 +10,7 @@ type Obstacle struct {
 	UnitDir      *Vector2
 }
 
-// NewObstacle : To create new obstacle object
+// NewEmptyObstacle : To create new obstacle object
 func NewEmptyObstacle() *Obstacle {
 	o := &Obstacle{
 		ID:           0,
