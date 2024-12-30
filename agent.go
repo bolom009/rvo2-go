@@ -23,6 +23,8 @@ type Agent struct {
 	AgentNeighbors    []*AgentNeighbor
 	OrcaLines         []*Line
 	Goal              *Vector2
+	// active agent include in rvo simulation
+	active bool
 }
 
 // ObstacleNeighbor represent near rvo obstacle
@@ -53,6 +55,7 @@ func NewEmptyAgent() *Agent {
 		MaxNeighbors:    0,
 		NeighborDist:    0,
 		MaxSpeed:        0,
+		active:          true,
 	}
 	return a
 }
@@ -72,6 +75,7 @@ func NewAgent(id uint16, position *Vector2, radius, timeHorizon, timeHorizonObst
 		NeighborDist:      neighborDist,
 		MaxSpeed:          maxSpeed,
 		ObstacleNeighbors: obstacleNeighbors,
+		active:            true,
 	}
 	return a
 }
@@ -432,6 +436,7 @@ func (a *Agent) InsertAgentNeighbor(agent *Agent, rangeSq *float32) {
 			i := len(a.AgentNeighbors) - 1
 
 			for {
+				// TODO ACTIVE LOGIC
 				if i != 0 && distSq < a.AgentNeighbors[i-1].DistSq {
 					a.AgentNeighbors[i] = a.AgentNeighbors[i-1]
 					i--

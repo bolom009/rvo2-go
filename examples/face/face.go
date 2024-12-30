@@ -87,6 +87,10 @@ func updateVisualization(sim *rvo.RVOSimulator, camera *rl.Camera2D) {
 	rl.BeginMode2D(*camera)
 
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		rvoAgent := sim.GetAgent(i)
 
 		rl.DrawCircle(int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), agentRadius, rl.Gray)
@@ -107,6 +111,10 @@ func setPreferredVelocities(sim *rvo.RVOSimulator) {
 	numAgents := sim.GetNumAgents()
 
 	for i := uint16(0); i < numAgents; i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		iPos := sim.GetAgentPosition(i)
 		iGoal := sim.GetAgentGoal(i)
 		if rvo.Abs(rvo.Sub(iPos, iGoal)) < 0.5 {
@@ -122,6 +130,10 @@ func setPreferredVelocities(sim *rvo.RVOSimulator) {
 
 		for j := uint16(0); j < numAgents; j++ {
 			if i != j {
+				if !sim.GetAgentActive(j) {
+					continue
+				}
+
 				toOther := rvo.Sub(sim.GetAgentPosition(j), iPos)
 				distance := rvo.Abs(toOther)
 				if distance < avoidanceRadius {

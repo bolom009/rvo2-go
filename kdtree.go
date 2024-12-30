@@ -4,8 +4,8 @@ import (
 	"math"
 )
 
-var (
-	MAX_LEAF_SIZE int = 10
+const (
+	MaxLeafSize int = 10
 )
 
 // KdTree :
@@ -72,16 +72,19 @@ func (kt *KdTree) BuildAgentTree() {
 	kt.Agents = nil
 	if len(kt.Agents) < len(Sim.Agents) {
 		for i := len(kt.Agents); i < len(Sim.Agents); i++ {
+			// skip disabled agents in building agents tree
+			if !Sim.Agents[i].active {
+				continue
+			}
 
 			kt.Agents = append(kt.Agents, Sim.Agents[i])
 		}
+
 		// AgentTreeを2*len(kt.Agents)-1で初期化
 		kt.AgentTree = make([]*AgentTreeNode, 2*len(kt.Agents)-1)
 		for i := 0; i < 2*len(kt.Agents)-1; i++ {
 			kt.AgentTree[i] = NewAgentTreeNode()
-
 		}
-
 	}
 
 	if len(kt.Agents) != 0 {
@@ -106,7 +109,7 @@ func (kt *KdTree) BuildAgentTreeRecursive(begin int, end int, node int) {
 		kt.AgentTree[node].MaxY = float32(math.Max(float64(kt.AgentTree[node].MaxY), float64(kt.Agents[i].Position.Y)))
 		kt.AgentTree[node].MinY = float32(math.Min(float64(kt.AgentTree[node].MinY), float64(kt.Agents[i].Position.Y)))
 	}
-	if end-begin > MAX_LEAF_SIZE {
+	if end-begin > MaxLeafSize {
 		isVertical := kt.AgentTree[node].MaxX-kt.AgentTree[node].MinX > kt.AgentTree[node].MaxY-kt.AgentTree[node].MinY
 		left := begin
 		right := end
@@ -182,7 +185,6 @@ func (kt *KdTree) BuildAgentTreeRecursive(begin int, end int, node int) {
 
 		kt.BuildAgentTreeRecursive(begin, left, kt.AgentTree[node].Left)
 		kt.BuildAgentTreeRecursive(left, end, kt.AgentTree[node].Right)
-
 	}
 }
 
@@ -348,7 +350,7 @@ func (kt *KdTree) DeleteObstacleTree(node *ObstacleTreeNode) {
 
 // QueryAgentTreeRecursive
 func (kt *KdTree) QueryAgentTreeRecursive(agent *Agent, rangeSq float32, node int) {
-	if kt.AgentTree[node].End-kt.AgentTree[node].Begin <= MAX_LEAF_SIZE {
+	if kt.AgentTree[node].End-kt.AgentTree[node].Begin <= MaxLeafSize {
 		for i := kt.AgentTree[node].Begin; i < kt.AgentTree[node].End; i++ {
 			agent.InsertAgentNeighbor(kt.Agents[i], &rangeSq)
 		}

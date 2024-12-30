@@ -97,6 +97,10 @@ func setupScenario(sim *rvo.RVOSimulator) {
 func reachedGoal(sim *rvo.RVOSimulator, distance float32) bool {
 	/* Check if all agents have reached their goals. */
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		position := sim.GetAgentPosition(i)
 		if rvo.Sqr(rvo.Sub(position, sim.GetAgentGoal(i))) > distance {
 			return false
@@ -108,6 +112,10 @@ func reachedGoal(sim *rvo.RVOSimulator, distance float32) bool {
 
 func setPreferredVelocities(sim *rvo.RVOSimulator) {
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		goalVector := sim.GetAgentGoalVector(i)
 		if rvo.Sqr(goalVector) > 1 {
 			goalVector = rvo.Normalize(goalVector)
@@ -144,6 +152,10 @@ func updateVisualization(sim *rvo.RVOSimulator, camera rl.Camera2D) {
 	}
 
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		rvoAgent := sim.GetAgent(i)
 		rl.DrawCircle(int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), 1.5, rl.Gray)
 		rl.DrawCircle(int32(rvoAgent.Position.X), int32(rvoAgent.Position.Y), 1.5, rl.Red)

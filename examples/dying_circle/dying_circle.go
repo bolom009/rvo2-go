@@ -27,7 +27,7 @@ func main() {
 	go func() {
 		for range time.Tick(time.Second) {
 			agentId := random(0, int(sim.GetNumAgents()))
-			sim.RemoveAgent(uint16(agentId))
+			sim.DisableAgent(uint16(agentId))
 		}
 	}()
 
@@ -55,10 +55,10 @@ func setupScenario(sim *rvo.RVOSimulator) {
 	sim.SetAgentDefaults(15.0, 10, 10.0, 10.0, 1.5, 0.1, &rvo.Vector2{}) // where is velocity property ?
 
 	var (
-		agentNum         = 250
+		agentNum uint16  = 250
 		radius   float32 = 200
 	)
-	for i := 0; i < agentNum; i++ {
+	for i := uint16(0); i < agentNum; i++ {
 		position := rvo.MulOne(rvo.NewVector2(
 			float32(math.Cos(float64(i)*2.0*math.Pi/float64(agentNum))),
 			float32(math.Sin(float64(i)*2.0*math.Pi/float64(agentNum))),
@@ -77,6 +77,10 @@ func updateVisualization(sim *rvo.RVOSimulator, camera rl.Camera2D) {
 	rl.BeginMode2D(camera)
 
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		rvoAgent := sim.GetAgent(i)
 
 		rl.DrawCircle(int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), 1.5, rl.Gray)
@@ -89,6 +93,10 @@ func updateVisualization(sim *rvo.RVOSimulator, camera rl.Camera2D) {
 
 func setPreferredVelocities(sim *rvo.RVOSimulator) {
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		goalVector := sim.GetAgentGoalVector(i)
 		if rvo.Sqr(goalVector) > 1 {
 			goalVector = rvo.Normalize(goalVector)

@@ -68,6 +68,10 @@ func updateVisualization(sim *rvo.RVOSimulator, camera rl.Camera2D) {
 	rl.BeginMode2D(camera)
 
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		rvoAgent := sim.GetAgent(i)
 
 		rl.DrawCircle(int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), 1.5, rl.Gray)
@@ -80,6 +84,10 @@ func updateVisualization(sim *rvo.RVOSimulator, camera rl.Camera2D) {
 
 func setPreferredVelocities(sim *rvo.RVOSimulator) {
 	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
 		goalVector := sim.GetAgentGoalVector(i)
 		if rvo.Sqr(goalVector) > 1 {
 			goalVector = rvo.Normalize(goalVector)

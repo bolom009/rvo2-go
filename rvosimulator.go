@@ -120,15 +120,19 @@ func (rvo *RVOSimulator) AddAgent(position *Vector2, neighborDist float32, maxNe
 }
 
 // RemoveAgent : Remove agent by agentNo
-func (rvo *RVOSimulator) RemoveAgent(agentNo uint16) bool {
+//func (rvo *RVOSimulator) RemoveAgent(agentNo uint16) bool {
+//
+//	copy(rvo.Agents[agentNo:], rvo.Agents[agentNo+1:])
+//	rvo.Agents[len(rvo.Agents)-1] = nil
+//	rvo.Agents = rvo.Agents[:len(rvo.Agents)-1]
+//
+//	//rvo.Agents = append(rvo.Agents[:agentNo], rvo.Agents[agentNo+1:]...)
+//
+//	return false
+//}
 
-	copy(rvo.Agents[agentNo:], rvo.Agents[agentNo+1:])
-	rvo.Agents[len(rvo.Agents)-1] = nil
-	rvo.Agents = rvo.Agents[:len(rvo.Agents)-1]
-
-	//rvo.Agents = append(rvo.Agents[:agentNo], rvo.Agents[agentNo+1:]...)
-
-	return false
+func (rvo *RVOSimulator) DisableAgent(agentNo uint16) {
+	rvo.Agents[agentNo].active = false
 }
 
 // GetAgentNoByID : Get Agent No. by Agent ID
@@ -207,16 +211,17 @@ func (rvo *RVOSimulator) AddObstacle(vertices []*Vector2) (uint16, error) {
 func (rvo *RVOSimulator) DoStep() {
 	rvo.KdTree.BuildAgentTree()
 
-	for i := 0; i < len(rvo.Agents); i++ {
-		// agentのneighborsを計算
-		rvo.Agents[i].ComputeNeighbors()
-		// agentの速度を計算
-		rvo.Agents[i].ComputeNewVelocity()
-	}
+	for _, agent := range rvo.Agents {
+		if !agent.active {
+			continue
+		}
 
-	for i := 0; i < len(rvo.Agents); i++ {
+		// agentのneighborsを計算
+		agent.ComputeNeighbors()
+		// agentの速度を計算
+		agent.ComputeNewVelocity()
 		// agentを更新
-		rvo.Agents[i].Update()
+		agent.Update()
 	}
 
 	// globaltimeを更新
@@ -227,6 +232,10 @@ func (rvo *RVOSimulator) DoStep() {
 func (rvo *RVOSimulator) IsReachedGoal() bool {
 	/* Check if all agents have reached their goals. */
 	for i := uint16(0); i < rvo.GetNumAgents(); i++ {
+		if !rvo.GetAgentActive(i) {
+			continue
+		}
+
 		if !rvo.IsAgentReachedGoal(i) {
 			return false
 		}
@@ -246,6 +255,10 @@ func (rvo *RVOSimulator) IsAgentReachedGoal(agentNo uint16) bool {
 // GetAgentGoalVector :
 func (rvo *RVOSimulator) GetAgentGoalVector(agentNo uint16) *Vector2 {
 	return Normalize(Sub(rvo.GetAgentGoal(agentNo), rvo.GetAgentPosition(agentNo)))
+}
+
+func (rvo *RVOSimulator) GetAgentActive(agentNo uint16) bool {
+	return rvo.Agents[agentNo].active
 }
 
 // GetAgents :
