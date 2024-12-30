@@ -122,7 +122,11 @@ func (rvo *RVOSimulator) AddAgent(position *Vector2, neighborDist float32, maxNe
 // RemoveAgent : Remove agent by agentNo
 func (rvo *RVOSimulator) RemoveAgent(agentNo uint16) bool {
 
-	rvo.Agents = append(rvo.Agents[:agentNo], rvo.Agents[agentNo+1:]...)
+	copy(rvo.Agents[agentNo:], rvo.Agents[agentNo+1:])
+	rvo.Agents[len(rvo.Agents)-1] = nil
+	rvo.Agents = rvo.Agents[:len(rvo.Agents)-1]
+
+	//rvo.Agents = append(rvo.Agents[:agentNo], rvo.Agents[agentNo+1:]...)
 
 	return false
 }
