@@ -1,6 +1,6 @@
 package rvo2_go
 
-// Obstacle :
+// Obstacle defines static obstacles in the simulation.
 type Obstacle struct {
 	ID           int
 	IsConvex     bool
@@ -10,7 +10,7 @@ type Obstacle struct {
 	UnitDir      *Vector2
 }
 
-// NewEmptyObstacle : To create new obstacle object
+// NewEmptyObstacle constructs a static obstacle instance.
 func NewEmptyObstacle() *Obstacle {
 	o := &Obstacle{
 		ID:           0,

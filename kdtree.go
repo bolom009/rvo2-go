@@ -8,14 +8,14 @@ const (
 	MaxLeafSize int = 10
 )
 
-// KdTree :
+// KdTree defines k-D trees for agents and static obstacles in the simulation.
 type KdTree struct {
 	ObstacleTree *ObstacleTreeNode
 	AgentTree    []*AgentTreeNode
 	Agents       []*Agent
 }
 
-// AgentTreeNode :
+// AgentTreeNode defines an agent k-D tree node.
 type AgentTreeNode struct {
 	Begin int
 	End   int
@@ -27,14 +27,14 @@ type AgentTreeNode struct {
 	MinY  float32
 }
 
-// ObstacleTreeNode
+// ObstacleTreeNode defines an obstacle k-D tree node.
 type ObstacleTreeNode struct {
 	Left     *ObstacleTreeNode
 	Right    *ObstacleTreeNode
 	Obstacle *Obstacle
 }
 
-// NewAgentTreeNode :
+// NewAgentTreeNode constructs an agent k-D tree node instance.
 func NewAgentTreeNode() *AgentTreeNode {
 	a := &AgentTreeNode{
 		Begin: 0,
@@ -49,7 +49,7 @@ func NewAgentTreeNode() *AgentTreeNode {
 	return a
 }
 
-// NewObstacleTreeNode :
+// NewObstacleTreeNode constructs an obstacle k-D tree node instance.
 func NewObstacleTreeNode() *ObstacleTreeNode {
 	o := &ObstacleTreeNode{
 		Left:     nil,
@@ -59,7 +59,7 @@ func NewObstacleTreeNode() *ObstacleTreeNode {
 	return o
 }
 
-// NewKdTree :
+// NewKdTree constructs a k-D tree instance.
 func NewKdTree() *KdTree {
 	k := &KdTree{
 		ObstacleTree: nil,
@@ -67,7 +67,7 @@ func NewKdTree() *KdTree {
 	return k
 }
 
-// BuildAgentTree :
+// BuildAgentTree builds an agent k-D tree.
 func (kt *KdTree) BuildAgentTree() {
 	kt.Agents = nil
 	if len(kt.Agents) < len(Sim.Agents) {
@@ -92,7 +92,7 @@ func (kt *KdTree) BuildAgentTree() {
 	}
 }
 
-// BuildAgentTreeRecursive :
+// BuildAgentTreeRecursive recursive function to build an agent k-D tree.
 func (kt *KdTree) BuildAgentTreeRecursive(begin int, end int, node int) {
 
 	kt.AgentTree[node].Begin = begin
@@ -188,9 +188,8 @@ func (kt *KdTree) BuildAgentTreeRecursive(begin int, end int, node int) {
 	}
 }
 
-// BuildObstacleTree :
+// BuildObstacleTree builds an obstacle k-D tree.
 func (kt *KdTree) BuildObstacleTree() {
-
 	kt.DeleteObstacleTree(kt.ObstacleTree)
 
 	obstacles := make([]*Obstacle, len(Sim.ObstacleVertices))
@@ -201,7 +200,7 @@ func (kt *KdTree) BuildObstacleTree() {
 	kt.ObstacleTree = kt.BuildObstacleTreeRecursive(obstacles)
 }
 
-// BuildObstacleTreeRecursive
+// BuildObstacleTreeRecursive recursive function to build an obstacle k-D tree.
 func (kt *KdTree) BuildObstacleTreeRecursive(obstacles []*Obstacle) *ObstacleTreeNode {
 	if len(obstacles) == 0 {
 		return nil
@@ -330,17 +329,17 @@ func (kt *KdTree) BuildObstacleTreeRecursive(obstacles []*Obstacle) *ObstacleTre
 	}
 }
 
-// ComputeAgentNeighbors :
+// ComputeAgentNeighbors computes the agent neighbors of the specified agent.
 func (kt *KdTree) ComputeAgentNeighbors(agent *Agent, rangeSq float32) {
 	kt.QueryAgentTreeRecursive(agent, rangeSq, 0)
 }
 
-// ComputeObstacleNeighbors :
+// ComputeObstacleNeighbors computes the obstacle neighbors of the specified agent.
 func (kt *KdTree) ComputeObstacleNeighbors(agent *Agent, rangeSq float32) {
 	kt.QueryObstacleTreeRecursive(agent, rangeSq, kt.ObstacleTree)
 }
 
-// DeleteObstacleTree :
+// DeleteObstacleTree deletes the specified obstacle tree node.
 func (kt *KdTree) DeleteObstacleTree(node *ObstacleTreeNode) {
 	if node != nil {
 		kt.DeleteObstacleTree(node.Left)
@@ -348,17 +347,15 @@ func (kt *KdTree) DeleteObstacleTree(node *ObstacleTreeNode) {
 	}
 }
 
-// QueryAgentTreeRecursive
+// QueryAgentTreeRecursive recursive function to compute the neighbors of the specified agent.
 func (kt *KdTree) QueryAgentTreeRecursive(agent *Agent, rangeSq float32, node int) {
 	if kt.AgentTree[node].End-kt.AgentTree[node].Begin <= MaxLeafSize {
 		for i := kt.AgentTree[node].Begin; i < kt.AgentTree[node].End; i++ {
 			agent.InsertAgentNeighbor(kt.Agents[i], &rangeSq)
 		}
 	} else {
-		var distSqLeft, distSqRight float32
-		distSqLeft = float32(math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinX-agent.Position.X)), 2) + math.Pow(math.Max(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Left].MaxX)), 2) + math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinY-agent.Position.Y)), 2) + math.Pow(math.Max(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Left].MaxY)), 2))
-
-		distSqRight = float32(math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinX-agent.Position.X)), 2) + math.Pow(math.Max(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Right].MaxX)), 2) + math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinY-agent.Position.Y)), 2) + math.Pow(math.Max(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Right].MaxY)), 2))
+		distSqLeft := float32(math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinX-agent.Position.X)), 2) + math.Pow(math.Max(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Left].MaxX)), 2) + math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinY-agent.Position.Y)), 2) + math.Pow(math.Max(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Left].MaxY)), 2))
+		distSqRight := float32(math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinX-agent.Position.X)), 2) + math.Pow(math.Max(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Right].MaxX)), 2) + math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinY-agent.Position.Y)), 2) + math.Pow(math.Max(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Right].MaxY)), 2))
 
 		if distSqLeft < distSqRight {
 			if distSqLeft < rangeSq {
@@ -377,22 +374,16 @@ func (kt *KdTree) QueryAgentTreeRecursive(agent *Agent, rangeSq float32, node in
 				}
 			}
 		}
-
 	}
-
 }
 
-// QueryObstacleTreeRecursive
+// QueryObstacleTreeRecursive recursive function to compute the neighbors of the specified obstacle.
 func (kt *KdTree) QueryObstacleTreeRecursive(agent *Agent, rangeSq float32, node *ObstacleTreeNode) {
-	if node == nil {
-		return
-	} else {
-		var obstacle1, obstacle2 *Obstacle
-		obstacle1 = node.Obstacle
-		obstacle2 = obstacle1.NextObstacle
+	if node != nil {
+		obstacle1 := node.Obstacle
+		obstacle2 := obstacle1.NextObstacle
 
-		var agentLeftOfLine, distSqLine float32
-		agentLeftOfLine = LeftOf(obstacle1.Point, obstacle2.Point, agent.Position)
+		agentLeftOfLine := LeftOf(obstacle1.Point, obstacle2.Point, agent.Position)
 
 		var tNode *ObstacleTreeNode
 		if agentLeftOfLine >= 0 {
@@ -403,7 +394,7 @@ func (kt *KdTree) QueryObstacleTreeRecursive(agent *Agent, rangeSq float32, node
 
 		kt.QueryObstacleTreeRecursive(agent, rangeSq, tNode)
 
-		distSqLine = float32(math.Pow(float64(agentLeftOfLine), 2)) / Sqr(Sub(obstacle2.Point, obstacle1.Point))
+		distSqLine := float32(math.Pow(float64(agentLeftOfLine), 2)) / Sqr(Sub(obstacle2.Point, obstacle1.Point))
 
 		if distSqLine < rangeSq {
 			if agentLeftOfLine < 0 {
@@ -433,13 +424,13 @@ func (kt *KdTree) QueryObstacleTreeRecursive(agent *Agent, rangeSq float32, node
 	}
 }
 
-// QueryVisibility
+// QueryVisibility queries the visibility between two points within a specified radius.
 func (kt *KdTree) QueryVisibility(q1 *Vector2, q2 *Vector2, radius float32) bool {
 	result := kt.QueryVisibilityRecursive(q1, q2, radius, kt.ObstacleTree)
 	return result
 }
 
-// QueryVisibilityRecursive
+// QueryVisibilityRecursive recursive function to query the visibility between two points within a specified radius.
 func (kt *KdTree) QueryVisibilityRecursive(q1 *Vector2, q2 *Vector2, radius float32, node *ObstacleTreeNode) bool {
 	if node == nil {
 		return true

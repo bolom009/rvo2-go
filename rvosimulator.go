@@ -6,7 +6,7 @@ var (
 	Sim *RVOSimulator
 )
 
-// RVOSimulator :
+// RVOSimulator defines the simulation. The main struct of the library that contains all simulation functionality.
 type RVOSimulator struct {
 	TimeStep         float32
 	Agents           []*Agent
@@ -18,7 +18,7 @@ type RVOSimulator struct {
 	NextAgentID      uint16
 }
 
-// NewRVOSimulator : RVOSimulator with options
+// NewRVOSimulator constructs a simulator instance and sets the default properties for any new agent that is added
 func NewRVOSimulator(timeStep, neighborDist float32, maxNeighbors uint16, timeHorizon, timeHorizonObst, radius, maxSpeed float32, velocity *Vector2) *RVOSimulator {
 	kdTree := NewKdTree()
 	defaultAgent := NewEmptyAgent()
@@ -46,7 +46,7 @@ func NewRVOSimulator(timeStep, neighborDist float32, maxNeighbors uint16, timeHo
 	return sim
 }
 
-// NewDefaultRVOSimulator : RVOSimulator with default values
+// NewEmptyRVOSimulator constructs a empty simulator instance
 func NewEmptyRVOSimulator() *RVOSimulator {
 	kdTree := NewKdTree()
 	defaultAgent := NewEmptyAgent()
@@ -64,18 +64,7 @@ func NewEmptyRVOSimulator() *RVOSimulator {
 	return sim
 }
 
-type AddAgentParam struct {
-	Position        *Vector2
-	NeighborDist    float32
-	MaxNeighbors    int
-	TimeHorizon     float32
-	TimeHorizonObst float32
-	Radius          float32
-	MaxSpeed        float32
-	Velocity        *Vector2
-}
-
-// AddDefaultAgent : Add agent with default values
+// AddDefaultAgent adds a new agent with default properties to the simulation.
 func (rvo *RVOSimulator) AddDefaultAgent(position *Vector2) (uint16, error) {
 
 	if rvo.DefaultAgent == nil {
@@ -99,8 +88,9 @@ func (rvo *RVOSimulator) AddDefaultAgent(position *Vector2) (uint16, error) {
 	return agent.ID, nil
 }
 
-// AddAgent : Add agent with options
-func (rvo *RVOSimulator) AddAgent(position *Vector2, neighborDist float32, maxNeighbors uint16, timeHorizon, timeHorizonObst, radius, maxSpeed float32, velocity *Vector2) (uint16, bool) {
+// AddAgent adds a new agent to the simulation.
+func (rvo *RVOSimulator) AddAgent(position *Vector2, neighborDist float32, maxNeighbors uint16, timeHorizon,
+	timeHorizonObst, radius, maxSpeed float32, velocity *Vector2) (uint16, bool) {
 
 	agent := NewEmptyAgent()
 	agent.Position = position
@@ -131,11 +121,12 @@ func (rvo *RVOSimulator) AddAgent(position *Vector2, neighborDist float32, maxNe
 //	return false
 //}
 
+// DisableAgent disable specific agent and exclude from simulation
 func (rvo *RVOSimulator) DisableAgent(agentNo uint16) {
 	rvo.Agents[agentNo].active = false
 }
 
-// GetAgentNoByID : Get Agent No. by Agent ID
+// GetAgentNoByID get specific agent by id
 func (rvo *RVOSimulator) GetAgentNoByID(id uint16) (uint16, bool) {
 	for i := uint16(0); i < rvo.GetNumAgents(); i++ {
 		if rvo.GetAgent(i).ID == id {
@@ -145,7 +136,7 @@ func (rvo *RVOSimulator) GetAgentNoByID(id uint16) (uint16, bool) {
 	return 0, false
 }
 
-// AddObstacle : Add Obstacle with vertices
+// AddObstacle adds a new obstacle to the simulation.
 func (rvo *RVOSimulator) AddObstacle(vertices []*Vector2) (uint16, error) {
 
 	// add obstacle
@@ -207,7 +198,8 @@ func (rvo *RVOSimulator) AddObstacle(vertices []*Vector2) (uint16, error) {
 	return obstacleNo, nil
 }
 
-// DoStep : Forward Step
+// DoStep lets the simulator perform a simulation step and
+// updates the two-dimensional position and two-dimensional velocity of each agent.
 func (rvo *RVOSimulator) DoStep() {
 	rvo.KdTree.BuildAgentTree()
 
@@ -219,16 +211,16 @@ func (rvo *RVOSimulator) DoStep() {
 		// agentのneighborsを計算
 		agent.ComputeNeighbors()
 		// agentの速度を計算
-		agent.ComputeNewVelocity()
+		agent.ComputeNewVelocity(rvo.TimeStep)
 		// agentを更新
-		agent.Update()
+		agent.Update(rvo.TimeStep)
 	}
 
 	// globaltimeを更新
 	rvo.GlobalTime += rvo.TimeStep
 }
 
-// IsReachedGoal :
+// IsReachedGoal method to check is all agent in simulation reached their goal
 func (rvo *RVOSimulator) IsReachedGoal() bool {
 	/* Check if all agents have reached their goals. */
 	for i := uint16(0); i < rvo.GetNumAgents(); i++ {
@@ -243,7 +235,7 @@ func (rvo *RVOSimulator) IsReachedGoal() bool {
 	return true
 }
 
-// IsAgentReachedGoal :
+// IsAgentReachedGoal method to check is specific agent reached the goal
 func (rvo *RVOSimulator) IsAgentReachedGoal(agentNo uint16) bool {
 	/* Check if agent have reached their goals. */
 	if Sqr(Sub(rvo.GetAgentGoal(agentNo), rvo.GetAgentPosition(agentNo))) > rvo.GetAgentRadius(agentNo)*rvo.GetAgentRadius(agentNo) {
@@ -252,80 +244,84 @@ func (rvo *RVOSimulator) IsAgentReachedGoal(agentNo uint16) bool {
 	return true
 }
 
-// GetAgentGoalVector :
+// GetAgentGoalVector returns the specified agent two-dimensional goal
 func (rvo *RVOSimulator) GetAgentGoalVector(agentNo uint16) *Vector2 {
 	return Normalize(Sub(rvo.GetAgentGoal(agentNo), rvo.GetAgentPosition(agentNo)))
 }
 
+// GetAgentActive returns the specified agent active state
 func (rvo *RVOSimulator) GetAgentActive(agentNo uint16) bool {
 	return rvo.Agents[agentNo].active
 }
 
-// GetAgents :
+// GetAgents returns list of all agents in simulation (active and non-active)
 func (rvo *RVOSimulator) GetAgents() []*Agent {
 	return rvo.Agents
 }
 
-// GetAgent :
+// GetAgent returns specific agent by id
 func (rvo *RVOSimulator) GetAgent(agentNo uint16) *Agent {
 	return rvo.Agents[agentNo]
 }
 
-// GetAgentAgentNeighbor :
+// GetAgentAgentNeighbor returns the specified agent neighbor of the specified agent.
 func (rvo *RVOSimulator) GetAgentAgentNeighbor(agentNo, neighborNo uint16) uint16 {
 	return rvo.Agents[agentNo].AgentNeighbors[neighborNo].Agent.ID
 }
 
-// GetAgentMaxNeighbors :
+// GetAgentMaxNeighbors returns the maximum neighbor count of a specified agent.
 func (rvo *RVOSimulator) GetAgentMaxNeighbors(agentNo uint16) uint16 {
 	agent := rvo.Agents[agentNo]
 	return agent.MaxNeighbors
 }
 
-// GetAgentMaxSpeed :
+// GetAgentMaxSpeed returns the maximum speed of a specified agent.
 func (rvo *RVOSimulator) GetAgentMaxSpeed(agentNo uint16) float32 {
 	agent := rvo.Agents[agentNo]
 	return agent.MaxSpeed
 }
 
-// GetAgentNeighborDist :
+// GetAgentNeighborDist returns the maximum neighbor distance of a specified agent.
 func (rvo *RVOSimulator) GetAgentNeighborDist(agentNo uint16) float32 {
 	agent := rvo.Agents[agentNo]
 	return agent.NeighborDist
 }
 
-// GetAgentNumAgentNeighbors :
+// GetAgentNumAgentNeighbors returns the count of agent neighbors taken into account to
+// compute the current velocity for the specified agent.
 func (rvo *RVOSimulator) GetAgentNumAgentNeighbors(agentNo uint16) int {
 	agent := rvo.Agents[agentNo]
 	return len(agent.AgentNeighbors)
 }
 
-// GetAgentNumObstacleNeighbors :
+// GetAgentNumObstacleNeighbors returns the count of obstacle neighbors taken into account to
+// compute the current velocity for the specified agent.
 func (rvo *RVOSimulator) GetAgentNumObstacleNeighbors(agentNo uint16) int {
 	agent := rvo.Agents[agentNo]
 	return len(agent.ObstacleNeighbors)
 }
 
-// GetAgentNumORCALines :
+// GetAgentNumORCALines returns the count of ORCA constraints used to compute the
+// current velocity for the specified agent.
 func (rvo *RVOSimulator) GetAgentNumORCALines(agentNo uint16) int {
 	agent := rvo.Agents[agentNo]
 	return len(agent.OrcaLines)
 }
 
-// GetAgentObstacleNeighbor :
+// GetAgentObstacleNeighbor returns the specified obstacle neighbor of the specified agent.
 func (rvo *RVOSimulator) GetAgentObstacleNeighbor(agentNo, neighborNo uint16) int {
 	agent := rvo.Agents[agentNo]
 	obstacleNeighbor := agent.ObstacleNeighbors[neighborNo]
 	return obstacleNeighbor.Obstacle.ID
 }
 
-// GetAgentORCALine :
+// GetAgentORCALine returns the specified ORCA constraint of the specified agent.
 func (rvo *RVOSimulator) GetAgentORCALine(agentNo, lineNo uint16) *Line {
 	agent := rvo.Agents[agentNo]
 	return agent.OrcaLines[lineNo]
 }
 
-// GetAgentPosition :
+// GetAgentPosition returns the two-dimensional position of a specified agent.
 func (rvo *RVOSimulator) GetAgentPosition(agentNo uint16) *Vector2 {
 	agent := rvo.Agents[agentNo]
 	return agent.Position
@@ -337,100 +333,102 @@ func (rvo *RVOSimulator) GetAgentGoal(agentNo uint16) *Vector2 {
 	return agent.Goal
 }
 
-// GetAgentPrefVelocity :
+// GetAgentPrefVelocity returns the two-dimensional preferred velocity of a specified agent.
 func (rvo *RVOSimulator) GetAgentPrefVelocity(agentNo uint16) *Vector2 {
 	agent := rvo.Agents[agentNo]
 	return agent.PrefVelocity
 }
 
-// GetAgentRadius :
+// GetAgentRadius returns the radius of a specified agent.
 func (rvo *RVOSimulator) GetAgentRadius(agentNo uint16) float32 {
 	agent := rvo.Agents[agentNo]
 	return agent.Radius
 }
 
-// GetAgentTimeHorizon :
+// GetAgentTimeHorizon returns the time horizon of a specified agent.
 func (rvo *RVOSimulator) GetAgentTimeHorizon(agentNo uint16) float32 {
 	agent := rvo.Agents[agentNo]
 	return agent.TimeHorizon
 }
 
-// GetAgentTimeHorizonObst :
+// GetAgentTimeHorizonObst  returns the time horizon with respect to obstacles of a specified agent.
 func (rvo *RVOSimulator) GetAgentTimeHorizonObst(agentNo uint16) float32 {
 	agent := rvo.Agents[agentNo]
 	return agent.TimeHorizonObst
 }
 
-// GetAgentVelocity :
+// GetAgentVelocity returns the two-dimensional linear velocity of a specified agent.
 func (rvo *RVOSimulator) GetAgentVelocity(agentNo uint16) *Vector2 {
 	agent := rvo.Agents[agentNo]
 	return agent.Velocity
 }
 
-// GetGlobalTime :
+// GetGlobalTime returns the global time of the simulation.
 func (rvo *RVOSimulator) GetGlobalTime() float32 {
 	return rvo.GlobalTime
 }
 
-// GetNumAgents :
+// GetNumAgents returns the count of agents in the simulation.
 func (rvo *RVOSimulator) GetNumAgents() uint16 {
 	return uint16(len(rvo.Agents))
 }
 
-// GetNumObstacleVertices :
+// GetNumObstacleVertices returns the count of obstacle vertices in the simulation.
 func (rvo *RVOSimulator) GetNumObstacleVertices() int {
 	return len(rvo.ObstacleVertices)
 }
 
-// GetObstacleVertex :
+// GetObstacleVertex returns the two-dimensional position of a specified obstacle vertex.
 func (rvo *RVOSimulator) GetObstacleVertex(vertexNo int) *Vector2 {
 	obstacle := rvo.ObstacleVertices[vertexNo]
 	return obstacle.Point
 }
 
-// GetObstacles :
+// GetObstacles returns list of all obstacles.
 func (rvo *RVOSimulator) GetObstacles() [][]*Vector2 {
 	return rvo.Obstacles
 }
 
-// GetNumObstacles :
+// GetNumObstacles returns the count of obstacles.
 func (rvo *RVOSimulator) GetNumObstacles() int {
 	return len(rvo.Obstacles)
 }
 
-// GetObstacle :
+// GetObstacle returns specific obstacle by id
 func (rvo *RVOSimulator) GetObstacle(obstacleNo int) []*Vector2 {
 	return rvo.Obstacles[obstacleNo]
 }
 
-// GetNextObstacleVertexNo :
+// GetNextObstacleVertexNo returns the number of the obstacle vertex succeeding the specified obstacle vertex in its polygon.
 func (rvo *RVOSimulator) GetNextObstacleVertexNo(vertexNo int) int {
 	obstacle := rvo.ObstacleVertices[vertexNo]
 	return obstacle.NextObstacle.ID
 }
 
-// GetPrevObstacleVertexNo :
+// GetPrevObstacleVertexNo returns the number of the obstacle vertex preceding the
+// specified obstacle vertex in its polygon.
 func (rvo *RVOSimulator) GetPrevObstacleVertexNo(vertexNo int) int {
 	obstacle := rvo.ObstacleVertices[vertexNo]
 	return obstacle.PrevObstacle.ID
 }
 
-// GetTimeStep :
+// GetTimeStep returns the time step of the simulation.
 func (rvo *RVOSimulator) GetTimeStep() float32 {
 	return rvo.TimeStep
 }
 
-// ProcessObstacles :
+// ProcessObstacles processes the obstacles that have been added so that they are
+// accounted for in the simulation.
 func (rvo *RVOSimulator) ProcessObstacles() {
 	rvo.KdTree.BuildObstacleTree()
 }
 
-// QueryVisibility :
+// QueryVisibility performs a visibility query between the two specified points with respect to the obstacles.
 func (rvo *RVOSimulator) QueryVisibility(point1 *Vector2, point2 *Vector2, radius float32) bool {
 	return rvo.KdTree.QueryVisibility(point1, point2, radius)
 }
 
-// SetAgentDefaults :
+// SetAgentDefaults sets the default properties for any new agent that is added.
 func (rvo *RVOSimulator) SetAgentDefaults(neighborDist float32, maxNeighbors uint16, timeHorizon, timeHorizonObst, radius, maxSpeed float32, velocity *Vector2) {
 	if rvo.DefaultAgent == nil {
 		rvo.DefaultAgent = NewEmptyAgent()
@@ -446,57 +444,57 @@ func (rvo *RVOSimulator) SetAgentDefaults(neighborDist float32, maxNeighbors uin
 
 }
 
-// SetAgentMaxNeighbors :
+// SetAgentMaxNeighbors sets the maximum neighbor count of a specified agent.
 func (rvo *RVOSimulator) SetAgentMaxNeighbors(agentNo, maxNeighbors uint16) {
 	rvo.Agents[agentNo].MaxNeighbors = maxNeighbors
 }
 
-// SetAgentMaxSpeed :
+// SetAgentMaxSpeed sets the maximum speed of a specified agent.
 func (rvo *RVOSimulator) SetAgentMaxSpeed(agentNo uint16, maxSpeed float32) {
 	rvo.Agents[agentNo].MaxSpeed = maxSpeed
 }
 
-// SetAgentNeighborDist :
+// SetAgentNeighborDist sets the maximum neighbor distance of a specified agent.
 func (rvo *RVOSimulator) SetAgentNeighborDist(agentNo uint16, neighborDist float32) {
 	rvo.Agents[agentNo].NeighborDist = neighborDist
 }
 
-// SetAgentPosition :
+// SetAgentPosition sets the two-dimensional position of a specified agent.
 func (rvo *RVOSimulator) SetAgentPosition(agentNo uint16, position *Vector2) {
 	rvo.Agents[agentNo].Position = position
 }
 
-// SetAgentGoal :
+// SetAgentGoal sets the two-dimensional goal of a specified agent.
 func (rvo *RVOSimulator) SetAgentGoal(agentNo uint16, goal *Vector2) {
 	rvo.Agents[agentNo].Goal = goal
 }
 
-// SetAgentPrefVelocity :
+// SetAgentPrefVelocity sets the two-dimensional preferred velocity of a specified agent.
 func (rvo *RVOSimulator) SetAgentPrefVelocity(agentNo uint16, prefVelocity *Vector2) {
 	rvo.Agents[agentNo].PrefVelocity = prefVelocity
 }
 
-// SetAgentRadius :
+// SetAgentRadius sets the radius of a specified agent.
 func (rvo *RVOSimulator) SetAgentRadius(agentNo uint16, radius float32) {
 	rvo.Agents[agentNo].Radius = radius
 }
 
-// SetAgentTimeHorizon :
+// SetAgentTimeHorizon sets the time horizon of a specified agent with respect to other agents.
 func (rvo *RVOSimulator) SetAgentTimeHorizon(agentNo uint16, timeHorizon float32) {
 	rvo.Agents[agentNo].TimeHorizon = timeHorizon
 }
 
-// SetAgentTimeHorizonObst :
+// SetAgentTimeHorizonObst sets the time horizon of a specified agent with respect to obstacles.
 func (rvo *RVOSimulator) SetAgentTimeHorizonObst(agentNo uint16, timeHorizonObst float32) {
 	rvo.Agents[agentNo].TimeHorizonObst = timeHorizonObst
 }
 
-// SetAgentVelocity :
+// SetAgentVelocity sets the two-dimensional linear velocity of a specified agent.
 func (rvo *RVOSimulator) SetAgentVelocity(agentNo uint16, velocity *Vector2) {
 	rvo.Agents[agentNo].Velocity = velocity
 }
 
-// SetTimeStep :
+// SetTimeStep sets the time step of the simulation.
 func (rvo *RVOSimulator) SetTimeStep(timeStep float32) {
 	rvo.TimeStep = timeStep
 }
