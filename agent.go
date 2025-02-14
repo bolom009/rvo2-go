@@ -8,21 +8,22 @@ const RvoEpsilon float32 = 0.00001 //A sufficiently small positive number.
 
 // Agent represent structure of rvo agent
 type Agent struct {
-	ID                uint16
-	Position          *Vector2
-	Radius            float32
-	TimeHorizon       float32
-	TimeHorizonObst   float32
-	Velocity          *Vector2
-	PrefVelocity      *Vector2
-	NewVelocity       *Vector2
-	MaxNeighbors      uint16
-	NeighborDist      float32
-	MaxSpeed          float32
-	ObstacleNeighbors []*ObstacleNeighbor
-	AgentNeighbors    []*AgentNeighbor
-	OrcaLines         []*Line
-	Goal              *Vector2
+	ID                   uint16
+	Position             *Vector2
+	Radius               float32
+	TimeHorizon          float32
+	TimeHorizonObst      float32
+	Velocity             *Vector2
+	PrefVelocity         *Vector2
+	NewVelocity          *Vector2
+	MaxNeighbors         uint16
+	NeighborDist         float32
+	MaxSpeed             float32
+	ObstacleNeighbors    []*ObstacleNeighbor
+	AgentNeighbors       []*AgentNeighbor
+	OrcaLines            []*Line
+	Goal                 *Vector2
+	IgnoreAgentORCALines bool
 	// active agent include in rvo simulation
 	active bool
 }
@@ -340,70 +341,72 @@ func (a *Agent) ComputeNewVelocity(timeStep float32) {
 	numObstLines := len(a.OrcaLines)
 	invTimeHorizon := 1 / a.TimeHorizon
 
-	/* Create agent ORCA lines. */
-	for i := 0; i < len(a.AgentNeighbors); i++ {
-		// otherが違う
-		var other *Agent
-		other = a.AgentNeighbors[i].Agent
+	if a.IgnoreAgentORCALines {
+		/* Create agent ORCA lines. */
+		for i := 0; i < len(a.AgentNeighbors); i++ {
+			// otherが違う
+			var other *Agent
+			other = a.AgentNeighbors[i].Agent
 
-		var relativePosition, relativeVelocity *Vector2
-		relativePosition = Sub(other.Position, a.Position)
-		relativeVelocity = Sub(a.Velocity, other.Velocity)
+			var relativePosition, relativeVelocity *Vector2
+			relativePosition = Sub(other.Position, a.Position)
+			relativeVelocity = Sub(a.Velocity, other.Velocity)
 
-		var distSq, combinedRadius, combinedRadiusSq float32
-		distSq = Sqr(relativePosition)
-		combinedRadius = a.Radius + other.Radius
-		combinedRadiusSq = float32(math.Pow(float64(combinedRadius), 2))
+			var distSq, combinedRadius, combinedRadiusSq float32
+			distSq = Sqr(relativePosition)
+			combinedRadius = a.Radius + other.Radius
+			combinedRadiusSq = float32(math.Pow(float64(combinedRadius), 2))
 
-		var line Line
-		var u, w, unitW *Vector2
-		var wLengthSq, wLength float32
-		if distSq > combinedRadiusSq {
-			/* No collision. */
-			w = Sub(relativeVelocity, MulOne(relativePosition, invTimeHorizon))
-			/* Vector from cutoff center to relative velocity. */
+			var line Line
+			var u, w, unitW *Vector2
+			var wLengthSq, wLength float32
+			if distSq > combinedRadiusSq {
+				/* No collision. */
+				w = Sub(relativeVelocity, MulOne(relativePosition, invTimeHorizon))
+				/* Vector from cutoff center to relative velocity. */
 
-			var dotProduct1, dotProduct2, leg float32
-			wLengthSq = Sqr(w)
-			dotProduct1 = Mul(w, relativePosition)
+				var dotProduct1, dotProduct2, leg float32
+				wLengthSq = Sqr(w)
+				dotProduct1 = Mul(w, relativePosition)
 
-			if dotProduct1 < 0 && float32(math.Pow(float64(dotProduct1), 2)) > combinedRadiusSq*wLengthSq {
-				/* Project on cut-off circle. */
-				wLength = float32(math.Sqrt(float64(wLengthSq)))
+				if dotProduct1 < 0 && float32(math.Pow(float64(dotProduct1), 2)) > combinedRadiusSq*wLengthSq {
+					/* Project on cut-off circle. */
+					wLength = float32(math.Sqrt(float64(wLengthSq)))
+					unitW = Div(w, wLength)
+
+					line.Direction = NewVector2(unitW.Y, -unitW.X)
+					u = MulOne(unitW, combinedRadius*invTimeHorizon-wLength)
+				} else {
+					/* Project on legs. */
+					leg = float32(math.Sqrt(float64(distSq - combinedRadiusSq)))
+					if Det(relativePosition, w) > 0 {
+						/* Project on left leg. */
+						line.Direction = Div(NewVector2(relativePosition.X*leg-relativePosition.Y*combinedRadius, relativePosition.X*combinedRadius+relativePosition.Y*leg), distSq)
+					} else {
+						/* Project on right leg. */
+						line.Direction = Flip(Div(NewVector2(relativePosition.X*leg+relativePosition.Y*combinedRadius, -relativePosition.X*combinedRadius+relativePosition.Y*leg), distSq))
+					}
+
+					dotProduct2 = Mul(relativeVelocity, line.Direction)
+
+					u = Sub(MulOne(line.Direction, dotProduct2), relativeVelocity)
+				}
+			} else {
+				/* Collision. Project on cut-off circle of time timeStep. */
+				invTimeStep := 1 / timeStep
+
+				/* Vector from cutoff center to relative velocity. */
+				w = Sub(relativeVelocity, MulOne(relativePosition, invTimeStep))
+				wLength = Abs(w)
 				unitW = Div(w, wLength)
 
 				line.Direction = NewVector2(unitW.Y, -unitW.X)
-				u = MulOne(unitW, combinedRadius*invTimeHorizon-wLength)
-			} else {
-				/* Project on legs. */
-				leg = float32(math.Sqrt(float64(distSq - combinedRadiusSq)))
-				if Det(relativePosition, w) > 0 {
-					/* Project on left leg. */
-					line.Direction = Div(NewVector2(relativePosition.X*leg-relativePosition.Y*combinedRadius, relativePosition.X*combinedRadius+relativePosition.Y*leg), distSq)
-				} else {
-					/* Project on right leg. */
-					line.Direction = Flip(Div(NewVector2(relativePosition.X*leg+relativePosition.Y*combinedRadius, -relativePosition.X*combinedRadius+relativePosition.Y*leg), distSq))
-				}
-
-				dotProduct2 = Mul(relativeVelocity, line.Direction)
-
-				u = Sub(MulOne(line.Direction, dotProduct2), relativeVelocity)
+				u = MulOne(unitW, combinedRadius*invTimeStep-wLength)
 			}
-		} else {
-			/* Collision. Project on cut-off circle of time timeStep. */
-			invTimeStep := 1 / timeStep
 
-			/* Vector from cutoff center to relative velocity. */
-			w = Sub(relativeVelocity, MulOne(relativePosition, invTimeStep))
-			wLength = Abs(w)
-			unitW = Div(w, wLength)
-
-			line.Direction = NewVector2(unitW.Y, -unitW.X)
-			u = MulOne(unitW, combinedRadius*invTimeStep-wLength)
+			line.Point = Add(a.Velocity, MulOne(u, 0.5))
+			a.OrcaLines = append(a.OrcaLines, &line)
 		}
-
-		line.Point = Add(a.Velocity, MulOne(u, 0.5))
-		a.OrcaLines = append(a.OrcaLines, &line)
 	}
 
 	lineFail := a.LinearProgram2(a.OrcaLines, a.MaxSpeed, a.PrefVelocity, false)
