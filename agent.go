@@ -341,7 +341,7 @@ func (a *Agent) ComputeNewVelocity(timeStep float32) {
 	numObstLines := len(a.OrcaLines)
 	invTimeHorizon := 1 / a.TimeHorizon
 
-	if a.IgnoreAgentORCALines {
+	if !a.IgnoreAgentORCALines {
 		/* Create agent ORCA lines. */
 		for i := 0; i < len(a.AgentNeighbors); i++ {
 			// otherが違う

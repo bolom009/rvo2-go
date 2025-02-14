@@ -494,6 +494,11 @@ func (rvo *RVOSimulator) SetAgentVelocity(agentNo uint16, velocity *Vector2) {
 	rvo.Agents[agentNo].Velocity = velocity
 }
 
+// SetIgnoreAgentORCALines sets flag for ignoring calculation orca lines of a specified agent.
+func (rvo *RVOSimulator) SetIgnoreAgentORCALines(agentNo uint16, ignore bool) {
+	rvo.Agents[agentNo].IgnoreAgentORCALines = ignore
+}
+
 // SetTimeStep sets the time step of the simulation.
 func (rvo *RVOSimulator) SetTimeStep(timeStep float32) {
 	rvo.TimeStep = timeStep
