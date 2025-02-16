@@ -4,7 +4,10 @@ go 1.21
 
 toolchain go1.23.1
 
-require github.com/gen2brain/raylib-go/raylib v0.0.0-20241203091912-3b89a24e68d1
+require (
+	github.com/gen2brain/raylib-go/raylib v0.0.0-20241203091912-3b89a24e68d1
+	github.com/knadh/profiler v0.2.0
+)
 
 require (
 	github.com/ebitengine/purego v0.7.1 // indirect

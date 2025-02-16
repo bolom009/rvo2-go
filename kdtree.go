@@ -104,10 +104,10 @@ func (kt *KdTree) BuildAgentTreeRecursive(begin int, end int, node int) {
 
 	// i-1番目までのAgentとi番目のAgentのポジションを比較
 	for i := begin + 1; i < end; i++ {
-		kt.AgentTree[node].MaxX = float32(math.Max(float64(kt.AgentTree[node].MaxX), float64(kt.Agents[i].Position.X)))
-		kt.AgentTree[node].MinX = float32(math.Min(float64(kt.AgentTree[node].MinX), float64(kt.Agents[i].Position.X)))
-		kt.AgentTree[node].MaxY = float32(math.Max(float64(kt.AgentTree[node].MaxY), float64(kt.Agents[i].Position.Y)))
-		kt.AgentTree[node].MinY = float32(math.Min(float64(kt.AgentTree[node].MinY), float64(kt.Agents[i].Position.Y)))
+		kt.AgentTree[node].MaxX = float32(maxFn(float64(kt.AgentTree[node].MaxX), float64(kt.Agents[i].Position.X)))
+		kt.AgentTree[node].MinX = float32(minFn(float64(kt.AgentTree[node].MinX), float64(kt.Agents[i].Position.X)))
+		kt.AgentTree[node].MaxY = float32(maxFn(float64(kt.AgentTree[node].MaxY), float64(kt.Agents[i].Position.Y)))
+		kt.AgentTree[node].MinY = float32(minFn(float64(kt.AgentTree[node].MinY), float64(kt.Agents[i].Position.Y)))
 	}
 	if end-begin > MaxLeafSize {
 		isVertical := kt.AgentTree[node].MaxX-kt.AgentTree[node].MinX > kt.AgentTree[node].MaxY-kt.AgentTree[node].MinY
@@ -240,13 +240,13 @@ func (kt *KdTree) BuildObstacleTreeRecursive(obstacles []*Obstacle) *ObstacleTre
 					rightSize++
 				}
 
-				if math.Max(float64(leftSize), float64(rightSize)) > math.Max(float64(minLeft), float64(minRight)) || (math.Max(float64(leftSize), float64(rightSize)) == math.Max(float64(minLeft), float64(minRight)) && math.Min(float64(leftSize), float64(rightSize)) >= math.Min(float64(minLeft), float64(minRight))) {
+				if maxFn(float64(leftSize), float64(rightSize)) > maxFn(float64(minLeft), float64(minRight)) || (maxFn(float64(leftSize), float64(rightSize)) == maxFn(float64(minLeft), float64(minRight)) && minFn(float64(leftSize), float64(rightSize)) >= minFn(float64(minLeft), float64(minRight))) {
 					break
 				}
 
 			}
 
-			if math.Max(float64(leftSize), float64(rightSize)) < math.Max(float64(minLeft), float64(minRight)) || (math.Max(float64(leftSize), float64(rightSize)) == math.Max(float64(minLeft), float64(minRight)) && math.Min(float64(leftSize), float64(rightSize)) < math.Min(float64(minLeft), float64(minRight))) {
+			if maxFn(float64(leftSize), float64(rightSize)) < maxFn(float64(minLeft), float64(minRight)) || (maxFn(float64(leftSize), float64(rightSize)) == maxFn(float64(minLeft), float64(minRight)) && minFn(float64(leftSize), float64(rightSize)) < minFn(float64(minLeft), float64(minRight))) {
 				minLeft = leftSize
 				minRight = rightSize
 				optimalSplit = i
@@ -354,8 +354,21 @@ func (kt *KdTree) QueryAgentTreeRecursive(agent *Agent, rangeSq float32, node in
 			agent.InsertAgentNeighbor(kt.Agents[i], &rangeSq)
 		}
 	} else {
-		distSqLeft := float32(math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinX-agent.Position.X)), 2) + math.Pow(math.Max(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Left].MaxX)), 2) + math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinY-agent.Position.Y)), 2) + math.Pow(math.Max(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Left].MaxY)), 2))
-		distSqRight := float32(math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinX-agent.Position.X)), 2) + math.Pow(math.Max(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Right].MaxX)), 2) + math.Pow(math.Max(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinY-agent.Position.Y)), 2) + math.Pow(math.Max(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Right].MaxY)), 2))
+		// calc left dist sq
+		distLeftMinX := maxFn(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinX-agent.Position.X))
+		distLeftMaxX := maxFn(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Left].MaxX))
+		distLeftMinY := maxFn(0, float64(kt.AgentTree[kt.AgentTree[node].Left].MinY-agent.Position.Y))
+		distLeftMaxY := maxFn(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Left].MaxY))
+		distSqLeft := float32(distLeftMinX*distLeftMinX + distLeftMaxX*distLeftMaxX +
+			distLeftMinY*distLeftMinY + distLeftMaxY*distLeftMaxY)
+
+		// calc right dist sq
+		distRightMinX := maxFn(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinX-agent.Position.X))
+		distRightMaxX := maxFn(0, float64(agent.Position.X-kt.AgentTree[kt.AgentTree[node].Right].MaxX))
+		distRightMinY := maxFn(0, float64(kt.AgentTree[kt.AgentTree[node].Right].MinY-agent.Position.Y))
+		distRightMaxY := maxFn(0, float64(agent.Position.Y-kt.AgentTree[kt.AgentTree[node].Right].MaxY))
+		distSqRight := float32(distRightMinX*distRightMinX + distRightMaxX*distRightMaxX +
+			distRightMinY*distRightMinY + distRightMaxY*distRightMaxY)
 
 		if distSqLeft < distSqRight {
 			if distSqLeft < rangeSq {
@@ -394,7 +407,14 @@ func (kt *KdTree) QueryObstacleTreeRecursive(agent *Agent, rangeSq float32, node
 
 		kt.QueryObstacleTreeRecursive(agent, rangeSq, tNode)
 
-		distSqLine := float32(math.Pow(float64(agentLeftOfLine), 2)) / Sqr(Sub(obstacle2.Point, obstacle1.Point))
+		dblAgentLeftOfLine := agentLeftOfLine * agentLeftOfLine
+		v21x := obstacle2.Point.X - obstacle1.Point.X
+		v21y := obstacle2.Point.Y - obstacle1.Point.Y
+
+		dSqr := v21x*v21x + v21y*v21y
+
+		distSqLine := dblAgentLeftOfLine / dSqr
+		//distSqLine := dblAgentLeftOfLine / Sqr(Sub(obstacle2.Point, obstacle1.Point))
 
 		if distSqLine < rangeSq {
 			if agentLeftOfLine < 0 {
@@ -460,4 +480,18 @@ func (kt *KdTree) QueryVisibilityRecursive(q1 *Vector2, q2 *Vector2, radius floa
 			return point1LeftOfQ*point2LeftOfQ >= 0 && float32(math.Pow(float64(point1LeftOfQ), 2))*invLengthQ > float32(math.Pow(float64(radius), 2)) && float32(math.Pow(float64(point2LeftOfQ), 2))*invLengthQ > float32(math.Pow(float64(radius), 2)) && kt.QueryVisibilityRecursive(q1, q2, radius, node.Left) && kt.QueryVisibilityRecursive(q1, q2, radius, node.Right)
 		}
 	}
+}
+
+func maxFn(x, y float64) float64 {
+	if x > y {
+		return x
+	}
+	return y
+}
+
+func minFn(x, y float64) float64 {
+	if x < y {
+		return x
+	}
+	return y
 }
