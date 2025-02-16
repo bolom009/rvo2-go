@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/knadh/profiler"
 	"math"
 	"math/rand"
+	"runtime"
 	"slices"
 	"time"
 
@@ -15,15 +17,17 @@ type Obstacle []*rvo.Vector2
 
 // AVG: 372.028µs
 func main() {
+	runtime.GOMAXPROCS(1)
+
 	rand.Seed(time.Now().UnixNano())
 
 	var (
-		sim = rvo.NewEmptyRVOSimulator()
-		//width  int32 = 800
-		//height int32 = 600
-		//camera       = rl.NewCamera2D(
-		//	rl.NewVector2(0, 0), rl.NewVector2(float32(width/2)*-1, float32(height/2)*-1), 0, 1.0,
-		//)
+		sim          = rvo.NewEmptyRVOSimulator()
+		width  int32 = 800
+		height int32 = 600
+		camera       = rl.NewCamera2D(
+			rl.NewVector2(0, 0), rl.NewVector2(float32(width/2)*-1, float32(height/2)*-1), 0, 1.0,
+		)
 		p                         = profiler.New(profiler.Conf{}, profiler.Cpu, profiler.Mem)
 		obstacles                 = make([]Obstacle, 0)
 		totalFrames time.Duration = 0
@@ -48,25 +52,25 @@ func main() {
 	setupScenario(sim, obstacles)
 	setPreferredVelocities(sim)
 
-	//rl.InitWindow(width, height, "Example: Face2Face")
+	rl.InitWindow(width, height, "Example: Face2Face")
 
 	ticker := time.NewTicker(time.Second / 30)
-	//titleTicker := time.NewTicker(time.Millisecond * 500)
+	titleTicker := time.NewTicker(time.Millisecond * 500)
 	stopTicker := time.NewTimer(time.Second * 20)
 	p.Start()
 	for {
-		//if rl.WindowShouldClose() {
-		//	p.Stop()
-		//	break
-		//}
+		if rl.WindowShouldClose() {
+			p.Stop()
+			break
+		}
 
 		if sim.IsReachedGoal() {
 			fmt.Printf("Goal \n ")
 			break
 		}
 
-		//eventSystem(&camera)
-		//updateVisualization(sim, obstacles, &camera)
+		eventSystem(&camera)
+		updateVisualization(sim, obstacles, &camera)
 
 		select {
 		case <-ticker.C:
@@ -76,8 +80,8 @@ func main() {
 			frameTime = time.Since(t)
 			totalFrames += frameTime
 			stepsCount++
-		//case <-titleTicker.C:
-		//	rl.SetWindowTitle(fmt.Sprintf("Example: Face2Face - %s", frameTime.String()))
+		case <-titleTicker.C:
+			rl.SetWindowTitle(fmt.Sprintf("Example: Face2Face - %s", frameTime.String()))
 		case <-stopTicker.C:
 			fmt.Printf("AVG: %v\n", (totalFrames / time.Duration(stepsCount)).String())
 			p.Stop()
@@ -85,7 +89,7 @@ func main() {
 		}
 	}
 
-	//rl.CloseWindow()
+	rl.CloseWindow()
 }
 
 const (
@@ -95,7 +99,7 @@ const (
 
 func setupScenario(sim *rvo.RVOSimulator, obstacles []Obstacle) {
 	sim.SetTimeStep(0.1)
-	sim.SetAgentDefaults(2*avoidanceScale, 20, 10*avoidanceScale, 10.0, agentRadius, 7, &rvo.Vector2{}) // where is velocity property ?
+	sim.SetAgentDefaults(2*avoidanceScale, 20, 10*avoidanceScale, 3.0, agentRadius, 7, &rvo.Vector2{}) // where is velocity property ?
 
 	for _, obstacle := range obstacles {
 		slices.Reverse(obstacle)
@@ -113,78 +117,83 @@ func setupScenario(sim *rvo.RVOSimulator, obstacles []Obstacle) {
 	}
 }
 
-//func updateVisualization(sim *rvo.RVOSimulator, obstacles []Obstacle, camera *rl.Camera2D) {
-//	rl.BeginDrawing()
-//	rl.ClearBackground(rl.White)
-//	rl.BeginMode2D(*camera)
-//
-//	for _, obstacle := range obstacles {
-//		if len(obstacle) < 2 {
-//			continue
-//		}
-//
-//		for i, pos := range obstacle[1:] {
-//			lastPos := obstacle[i]
-//
-//			rl.DrawLine(int32(lastPos.X), int32(lastPos.Y), int32(pos.X), int32(pos.Y), rl.Orange)
-//		}
-//
-//		if len(obstacle) > 2 {
-//			pos1 := obstacle[0]
-//			pos2 := obstacle[len(obstacle)-1]
-//
-//			rl.DrawLine(int32(pos1.X), int32(pos1.Y), int32(pos2.X), int32(pos2.Y), rl.Orange)
-//		}
-//	}
-//
-//	for i := uint16(0); i < sim.GetNumAgents(); i++ {
-//		if !sim.GetAgentActive(i) {
-//			continue
-//		}
-//
-//		rvoAgent := sim.GetAgent(i)
-//
-//		rl.DrawCircle(int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), agentRadius, rl.Gray)
-//		//rl.DrawLine(int32(rvoAgent.Position.X), int32(rvoAgent.Position.Y), int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), rl.Blue)
-//
-//		color := rl.Red
-//		if i == 0 {
-//			color = rl.Green
-//		}
-//		rl.DrawCircle(int32(rvoAgent.Position.X), int32(rvoAgent.Position.Y), agentRadius, color)
-//	}
-//
-//	rl.EndMode2D()
-//	rl.EndDrawing()
-//}
+func updateVisualization(sim *rvo.RVOSimulator, obstacles []Obstacle, camera *rl.Camera2D) {
+	rl.BeginDrawing()
+	rl.ClearBackground(rl.White)
+	rl.BeginMode2D(*camera)
 
-//func eventSystem(camera *rl.Camera2D) {
-//	mouseWorldPos := rl.GetScreenToWorld2D(rl.GetMousePosition(), *camera)
-//
-//	wheel := rl.GetMouseWheelMove()
-//	if wheel != 0 {
-//		// Set the offset to where the mouse is
-//		camera.Offset = rl.GetMousePosition()
-//
-//		// Set the target to match, so that the camera maps the world space point
-//		// under the cursor to the screen space point under the cursor at any zoom
-//		camera.Target = mouseWorldPos
-//
-//		// Zoom increment
-//		scaleFactor := 1.0 + (0.25 * math.Abs(float64(wheel)))
-//		if wheel < 0 {
-//			scaleFactor = 1.0 / scaleFactor
-//		}
-//
-//		camera.Zoom = rl.Clamp(camera.Zoom*float32(scaleFactor), 0.125, 64.0)
-//	}
-//
-//	if rl.IsMouseButtonDown(rl.MouseRightButton) {
-//		delta := rl.GetMouseDelta()
-//		delta = rl.Vector2Scale(delta, -1.0/camera.Zoom)
-//		camera.Target = rl.Vector2Add(camera.Target, delta)
-//	}
-//}
+	for _, obstacle := range obstacles {
+		if len(obstacle) < 2 {
+			continue
+		}
+
+		for i, pos := range obstacle[1:] {
+			lastPos := obstacle[i]
+
+			rl.DrawLine(int32(lastPos.X), int32(lastPos.Y), int32(pos.X), int32(pos.Y), rl.Orange)
+		}
+
+		if len(obstacle) > 2 {
+			pos1 := obstacle[0]
+			pos2 := obstacle[len(obstacle)-1]
+
+			rl.DrawLine(int32(pos1.X), int32(pos1.Y), int32(pos2.X), int32(pos2.Y), rl.Orange)
+		}
+	}
+
+	for i := uint16(0); i < sim.GetNumAgents(); i++ {
+		if !sim.GetAgentActive(i) {
+			continue
+		}
+
+		rvoAgent := sim.GetAgent(i)
+
+		rl.DrawCircle(int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), agentRadius, rl.Gray)
+
+		// draw obstacle detection range
+		//rl.DrawCircleLines(int32(rvoAgent.Position.X), int32(rvoAgent.Position.Y), rvoAgent.ObstacleRangeSq, rl.Blue)
+
+		// draw goal line
+		//rl.DrawLine(int32(rvoAgent.Position.X), int32(rvoAgent.Position.Y), int32(rvoAgent.Goal.X), int32(rvoAgent.Goal.Y), rl.Blue)
+
+		color := rl.Red
+		if i == 0 {
+			color = rl.Green
+		}
+		rl.DrawCircle(int32(rvoAgent.Position.X), int32(rvoAgent.Position.Y), agentRadius, color)
+	}
+
+	rl.EndMode2D()
+	rl.EndDrawing()
+}
+
+func eventSystem(camera *rl.Camera2D) {
+	mouseWorldPos := rl.GetScreenToWorld2D(rl.GetMousePosition(), *camera)
+
+	wheel := rl.GetMouseWheelMove()
+	if wheel != 0 {
+		// Set the offset to where the mouse is
+		camera.Offset = rl.GetMousePosition()
+
+		// Set the target to match, so that the camera maps the world space point
+		// under the cursor to the screen space point under the cursor at any zoom
+		camera.Target = mouseWorldPos
+
+		// Zoom increment
+		scaleFactor := 1.0 + (0.25 * math.Abs(float64(wheel)))
+		if wheel < 0 {
+			scaleFactor = 1.0 / scaleFactor
+		}
+
+		camera.Zoom = rl.Clamp(camera.Zoom*float32(scaleFactor), 0.125, 64.0)
+	}
+
+	if rl.IsMouseButtonDown(rl.MouseRightButton) {
+		delta := rl.GetMouseDelta()
+		delta = rl.Vector2Scale(delta, -1.0/camera.Zoom)
+		camera.Target = rl.Vector2Add(camera.Target, delta)
+	}
+}
 
 func setPreferredVelocities(sim *rvo.RVOSimulator) {
 	for _, agent := range sim.GetAgents() {
