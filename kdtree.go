@@ -62,28 +62,52 @@ func NewObstacleTreeNode() *ObstacleTreeNode {
 // NewKdTree constructs a k-D tree instance.
 func NewKdTree() *KdTree {
 	k := &KdTree{
+		Agents:       nil,
 		ObstacleTree: nil,
+		AgentTree:    nil,
 	}
 	return k
 }
 
 // BuildAgentTree builds an agent k-D tree.
 func (kt *KdTree) BuildAgentTree() {
-	kt.Agents = nil
+	kt.Agents = kt.Agents[:0]
 	if len(kt.Agents) < len(Sim.Agents) {
 		for i := len(kt.Agents); i < len(Sim.Agents); i++ {
+			agent := Sim.Agents[i]
+
 			// skip disabled agents in building agents tree
-			if !Sim.Agents[i].active {
+			if !agent.active {
 				continue
 			}
 
-			kt.Agents = append(kt.Agents, Sim.Agents[i])
+			kt.Agents = append(kt.Agents, agent)
+		}
+
+		lAgents := len(kt.Agents)
+		eLen := 2*lAgents - 1
+
+		if len(kt.AgentTree) >= eLen {
+			kt.AgentTree = kt.AgentTree[:eLen]
+		} else {
+			kt.AgentTree = make([]*AgentTreeNode, eLen)
 		}
 
 		// AgentTreeを2*len(kt.Agents)-1で初期化
-		kt.AgentTree = make([]*AgentTreeNode, 2*len(kt.Agents)-1)
-		for i := 0; i < 2*len(kt.Agents)-1; i++ {
-			kt.AgentTree[i] = NewAgentTreeNode()
+		for i := 0; i < eLen; i++ {
+			agentTree := kt.AgentTree[i]
+			if agentTree == nil {
+				kt.AgentTree[i] = NewAgentTreeNode()
+			} else {
+				agentTree.Begin = 0
+				agentTree.End = 0
+				agentTree.Left = 0
+				agentTree.Right = 0
+				agentTree.MaxX = 0
+				agentTree.MaxY = 0
+				agentTree.MinX = 0
+				agentTree.MinY = 0
+			}
 		}
 	}
 
