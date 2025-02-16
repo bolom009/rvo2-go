@@ -1,6 +1,9 @@
 package rvo2_go
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
 
 var (
 	Sim *RVOSimulator
@@ -80,6 +83,10 @@ func (rvo *RVOSimulator) AddDefaultAgent(position *Vector2) (uint16, error) {
 	agent.TimeHorizon = rvo.DefaultAgent.TimeHorizon
 	agent.TimeHorizonObst = rvo.DefaultAgent.TimeHorizonObst
 	agent.Velocity = rvo.DefaultAgent.Velocity
+	agent.AgentNeighbors = make([]*AgentNeighbor, 0)
+	agent.ObstacleNeighbors = make([]*ObstacleNeighbor, 0)
+	agent.ObstacleRangeSq = float32(math.Pow(float64(agent.TimeHorizonObst*agent.MaxSpeed+agent.Radius), 2))
+	agent.NeighborRangeSq = float32(math.Pow(float64(agent.NeighborDist), 2))
 	agent.ID = rvo.NextAgentID
 
 	rvo.Agents = append(rvo.Agents, agent)
@@ -101,6 +108,10 @@ func (rvo *RVOSimulator) AddAgent(position *Vector2, neighborDist float32, maxNe
 	agent.TimeHorizon = timeHorizon
 	agent.TimeHorizonObst = timeHorizonObst
 	agent.Velocity = velocity
+	agent.AgentNeighbors = make([]*AgentNeighbor, 0)
+	agent.ObstacleNeighbors = make([]*ObstacleNeighbor, 0)
+	agent.ObstacleRangeSq = float32(math.Pow(float64(agent.TimeHorizonObst*agent.MaxSpeed+agent.Radius), 2))
+	agent.NeighborRangeSq = float32(math.Pow(float64(agent.NeighborDist), 2))
 	agent.ID = rvo.NextAgentID
 
 	rvo.Agents = append(rvo.Agents, agent)
@@ -441,7 +452,6 @@ func (rvo *RVOSimulator) SetAgentDefaults(neighborDist float32, maxNeighbors uin
 	rvo.DefaultAgent.TimeHorizon = timeHorizon
 	rvo.DefaultAgent.TimeHorizonObst = timeHorizonObst
 	rvo.DefaultAgent.Velocity = velocity
-
 }
 
 // SetAgentMaxNeighbors sets the maximum neighbor count of a specified agent.
@@ -451,12 +461,12 @@ func (rvo *RVOSimulator) SetAgentMaxNeighbors(agentNo, maxNeighbors uint16) {
 
 // SetAgentMaxSpeed sets the maximum speed of a specified agent.
 func (rvo *RVOSimulator) SetAgentMaxSpeed(agentNo uint16, maxSpeed float32) {
-	rvo.Agents[agentNo].MaxSpeed = maxSpeed
+	rvo.Agents[agentNo].SetMaxSpeed(maxSpeed)
 }
 
 // SetAgentNeighborDist sets the maximum neighbor distance of a specified agent.
 func (rvo *RVOSimulator) SetAgentNeighborDist(agentNo uint16, neighborDist float32) {
-	rvo.Agents[agentNo].NeighborDist = neighborDist
+	rvo.Agents[agentNo].SetNeighborDist(neighborDist)
 }
 
 // SetAgentPosition sets the two-dimensional position of a specified agent.

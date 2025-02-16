@@ -11,8 +11,11 @@ type Agent struct {
 	ID                   uint16
 	Position             *Vector2
 	Radius               float32
+	DblRadius            float32
 	TimeHorizon          float32
 	TimeHorizonObst      float32
+	ObstacleRangeSq      float32
+	NeighborRangeSq      float32
 	Velocity             *Vector2
 	PrefVelocity         *Vector2
 	NewVelocity          *Vector2
@@ -75,22 +78,27 @@ func NewAgent(id uint16, position *Vector2, radius, timeHorizon, timeHorizonObst
 		MaxNeighbors:      maxNeighbors,
 		NeighborDist:      neighborDist,
 		MaxSpeed:          maxSpeed,
+		AgentNeighbors:    make([]*AgentNeighbor, 0),
 		ObstacleNeighbors: obstacleNeighbors,
-		active:            true,
+		ObstacleRangeSq:   float32(math.Pow(float64(timeHorizonObst*maxSpeed+radius), 2)),
+		NeighborRangeSq:   float32(math.Pow(float64(neighborDist), 2)),
+		DblRadius:         float32(math.Pow(float64(radius), 2)),
+
+		active: true,
 	}
 	return a
 }
 
 // ComputeNeighbors computes the neighbors of this agent.
 func (a *Agent) ComputeNeighbors() {
-	a.ObstacleNeighbors = make([]*ObstacleNeighbor, 0)
-	rangeSq := float32(math.Pow(float64(a.TimeHorizonObst*a.MaxSpeed+a.Radius), 2))
+	a.ObstacleNeighbors = a.ObstacleNeighbors[:0]
+	rangeSq := a.ObstacleRangeSq
 
 	Sim.KdTree.ComputeObstacleNeighbors(a, rangeSq)
 
-	a.AgentNeighbors = make([]*AgentNeighbor, 0)
+	a.AgentNeighbors = a.AgentNeighbors[:0]
 	if a.MaxNeighbors > 0 {
-		rangeSq = float32(math.Pow(float64(a.NeighborDist), 2))
+		rangeSq = a.NeighborRangeSq
 		Sim.KdTree.ComputeAgentNeighbors(a, rangeSq)
 	}
 }
@@ -134,7 +142,7 @@ func (a *Agent) ComputeNewVelocity(timeStep float32) {
 
 			distSq1        = Sqr(relativePosition1)
 			distSq2        = Sqr(relativePosition2)
-			radiusSq       = float32(math.Pow(float64(a.Radius), 2))
+			radiusSq       = a.DblRadius
 			obstacleVector = Sub(obstacle2.Point, obstacle1.Point)
 			s              = Mul(Flip(relativePosition1), obstacleVector) / Sqr(obstacleVector)
 			distSqLine     = Sqr(Sub(Flip(relativePosition1), MulOne(obstacleVector, s)))
@@ -355,7 +363,8 @@ func (a *Agent) ComputeNewVelocity(timeStep float32) {
 			var distSq, combinedRadius, combinedRadiusSq float32
 			distSq = Sqr(relativePosition)
 			combinedRadius = a.Radius + other.Radius
-			combinedRadiusSq = float32(math.Pow(float64(combinedRadius), 2))
+			dblCombinedRadius := combinedRadius * combinedRadius
+			combinedRadiusSq = dblCombinedRadius
 
 			var line Line
 			var u, w, unitW *Vector2
@@ -369,7 +378,8 @@ func (a *Agent) ComputeNewVelocity(timeStep float32) {
 				wLengthSq = Sqr(w)
 				dotProduct1 = Mul(w, relativePosition)
 
-				if dotProduct1 < 0 && float32(math.Pow(float64(dotProduct1), 2)) > combinedRadiusSq*wLengthSq {
+				dblDotProduct1 := dotProduct1 * dotProduct1
+				if dotProduct1 < 0 && dblDotProduct1 > combinedRadiusSq*wLengthSq {
 					/* Project on cut-off circle. */
 					wLength = float32(math.Sqrt(float64(wLengthSq)))
 					unitW = Div(w, wLength)
@@ -417,10 +427,11 @@ func (a *Agent) ComputeNewVelocity(timeStep float32) {
 
 // InsertAgentNeighbor inserts an agent neighbor into the set of neighbors of this agent.
 func (a *Agent) InsertAgentNeighbor(agent *Agent, rangeSq *float32) {
-	if a != agent {
-		distSq := Sqr(Sub(a.Position, agent.Position))
+	if a.ID != agent.ID {
+		x := a.Position.X - agent.Position.X
+		y := a.Position.Y - agent.Position.Y
 
-		// 2Agent間の距離が半径よりも近かった場合
+		distSq := x*x + y*y
 		if distSq < *rangeSq {
 			if uint16(len(a.AgentNeighbors)) < a.MaxNeighbors {
 				a.AgentNeighbors = append(a.AgentNeighbors, &AgentNeighbor{DistSq: distSq, Agent: agent})
@@ -454,7 +465,6 @@ func (a *Agent) InsertObstacleNeighbor(obstacle *Obstacle, rangeSq float32) {
 	nextObstacle := obstacle.NextObstacle
 
 	distSq := DistSqPointLineSegment(obstacle.Point, nextObstacle.Point, a.Position)
-
 	if distSq < rangeSq {
 		a.ObstacleNeighbors = append(a.ObstacleNeighbors, &ObstacleNeighbor{DistSq: distSq, Obstacle: obstacle})
 
@@ -488,8 +498,11 @@ func (a *Agent) LinearProgram1(lines []*Line, lineNo int, radius float32, optVel
 	var dotProduct, discriminant float32
 	// pointとdirectionの内積
 	dotProduct = Mul(lines[lineNo].Point, lines[lineNo].Direction)
+	dblDotProduct := dotProduct * dotProduct
+	dblRadius := radius * radius
+
 	// 内積の二乗＋maxSpeedの二乗-pointの二乗(判別式)
-	discriminant = float32(math.Pow(float64(dotProduct), 2)) + float32(math.Pow(float64(radius), 2)) - Sqr(lines[lineNo].Point)
+	discriminant = dblDotProduct + dblRadius - Sqr(lines[lineNo].Point)
 
 	if discriminant < 0 {
 		/* Max speed circle fully invalidates line lineNo. */
@@ -517,11 +530,11 @@ func (a *Agent) LinearProgram1(lines []*Line, lineNo int, radius float32, optVel
 		if denominator >= 0 {
 			// 行iはlineNoより右側にある
 			/* Line i bounds line lineNo on the right. */
-			tRight = float32(math.Min(float64(tRight), float64(t)))
+			tRight = float32(minFn(float64(tRight), float64(t)))
 		} else {
 			// 行iはlineNoより左側にある
 			/* Line i bounds line lineNo on the left. */
-			tLeft = float32(math.Max(float64(tLeft), float64(t)))
+			tLeft = float32(maxFn(float64(tLeft), float64(t)))
 		}
 
 		if tLeft > tRight {
@@ -534,11 +547,9 @@ func (a *Agent) LinearProgram1(lines []*Line, lineNo int, radius float32, optVel
 		if Mul(optVelocity, lines[lineNo].Direction) > 0 {
 			/* Take right extreme. */
 			a.NewVelocity = Add(lines[lineNo].Point, MulOne(lines[lineNo].Direction, tRight))
-
 		} else {
 			/* Take left extreme. */
 			a.NewVelocity = Add(lines[lineNo].Point, MulOne(lines[lineNo].Direction, tLeft))
-
 		}
 	} else {
 		/* Optimize closest point. */
@@ -558,6 +569,7 @@ func (a *Agent) LinearProgram1(lines []*Line, lineNo int, radius float32, optVel
 // LinearProgram2 solves a two-dimensional linear program subject to linear
 // constraints defined by lines and a circular constraint.
 func (a *Agent) LinearProgram2(lines []*Line, radius float32, optVelocity *Vector2, directionOpt bool) int {
+	dblRadius := radius * radius
 	// 速度(a.NewVelocity)の前処理
 	if directionOpt {
 		// LP3から呼ばれた時のみ
@@ -567,7 +579,7 @@ func (a *Agent) LinearProgram2(lines []*Line, radius float32, optVelocity *Vecto
 		 * length in this case.
 		 */
 		a.NewVelocity = MulOne(optVelocity, radius)
-	} else if Sqr(optVelocity) > float32(math.Pow(float64(radius), 2)) {
+	} else if Sqr(optVelocity) > dblRadius {
 		// prefVelocityの距離が半径より大きいとき
 		// 半径を越すとき、normarizeする
 		/* Optimize closest point and outside circle. */
@@ -640,4 +652,37 @@ func (a *Agent) LinearProgram3(lines []*Line, numObstLines int, beginLine int, r
 			distance = Det(lines[i].Direction, Sub(lines[i].Point, a.NewVelocity))
 		}
 	}
+}
+
+func (a *Agent) SetTimeHorizonObst(timeHorizonObst float32) {
+	a.TimeHorizonObst = timeHorizonObst
+
+	// recalc obstacle range sq
+	a.ObstacleRangeSq = float32(math.Pow(float64(timeHorizonObst*a.MaxSpeed+a.Radius), 2))
+}
+
+func (a *Agent) SetMaxSpeed(maxSpeed float32) {
+	a.MaxSpeed = maxSpeed
+
+	// recalc obstacle range sq
+	a.ObstacleRangeSq = float32(math.Pow(float64(a.TimeHorizonObst*maxSpeed+a.Radius), 2))
+}
+
+func (a *Agent) SetRadius(radius float32) {
+	a.Radius = radius
+
+	// recalc obstacle range sq
+	a.ObstacleRangeSq = float32(math.Pow(float64(a.TimeHorizonObst*a.MaxSpeed+radius), 2))
+	a.DblRadius = float32(math.Pow(float64(radius), 2))
+}
+
+func (a *Agent) SetNeighborDist(neighborDist float32) {
+	a.NeighborDist = neighborDist
+
+	// recalc neighbor range sq
+	a.NeighborRangeSq = float32(math.Pow(float64(neighborDist), 2))
+}
+
+func (a *Agent) IsActive() bool {
+	return a.active
 }

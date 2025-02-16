@@ -102,18 +102,56 @@ func Det(vec1 *Vector2, vec2 *Vector2) float32 {
 
 // LeftOf :
 func LeftOf(vec1 *Vector2, vec2 *Vector2, vec3 *Vector2) float32 {
-	return Det(Sub(vec1, vec3), Sub(vec2, vec1))
+	v13x := vec1.X - vec3.X
+	v13y := vec1.Y - vec3.Y
+
+	v21x := vec2.X - vec1.X
+	v21y := vec2.Y - vec1.Y
+
+	return v13x*v21y - v13y*v21x
 }
 
 // DistSqPointLineSegment :
 func DistSqPointLineSegment(vec1 *Vector2, vec2 *Vector2, vec3 *Vector2) float32 {
-	r := Mul(Sub(vec3, vec1), Sub(vec2, vec1)) / Sqr(Sub(vec2, vec1))
+	v31x := vec3.X - vec1.X
+	v31y := vec3.Y - vec1.Y
+
+	v21x := vec2.X - vec1.X
+	v21y := vec2.Y - vec1.Y
+
+	// vec1.X*vec2.X + vec1.Y*vec2.Y
+	mul := v31x*v21x + v31y*v21y
+	dSqr := v21x*v21x + v21y*v21y
+
+	//r := Mul(Sub(vec3, vec1), Sub(vec2, vec1)) / Sqr(Sub(vec2, vec1))
+	r := mul / dSqr
 
 	if r < 0 {
-		return Sqr(Sub(vec3, vec1))
+		return v31x*v31x + v31y*v31y
+		//return Sqr(Sub(vec3, vec1))
 	} else if r > 1 {
-		return Sqr(Sub(vec3, vec2))
+		v32x := vec3.X - vec2.X
+		v32y := vec3.Y - vec2.Y
+		return v32x*v32x + v32y*v32y
+		//return Sqr(Sub(vec3, vec2))
 	} else {
-		return Sqr(Sub(vec3, Add(vec1, MulOne(Sub(vec2, vec1), r))))
+		v21xScalar := v21x * r
+		v21yScalar := v21y * r
+
+		addVx := v21xScalar + vec1.X
+		addVy := v21yScalar + vec1.Y
+
+		v2x := vec3.X - addVx
+		v2y := vec3.Y - addVy
+
+		return v2x*v2x + v2y*v2y
+		//return Sqr(
+		//	Sub(
+		//		vec3,
+		//		Add(vec1,
+		//			MulOne(Sub(vec2, vec1), r),
+		//		),
+		//	),
+		//)
 	}
 }
