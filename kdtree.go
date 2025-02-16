@@ -118,31 +118,35 @@ func (kt *KdTree) BuildAgentTree() {
 
 // BuildAgentTreeRecursive recursive function to build an agent k-D tree.
 func (kt *KdTree) BuildAgentTreeRecursive(begin int, end int, node int) {
+	nodeAgentTree := kt.AgentTree[node]
+	beginAgent := kt.Agents[begin]
 
-	kt.AgentTree[node].Begin = begin
-	kt.AgentTree[node].End = end
-	kt.AgentTree[node].MinX = kt.Agents[begin].Position.X
-	kt.AgentTree[node].MaxX = kt.Agents[begin].Position.X
-	kt.AgentTree[node].MinY = kt.Agents[begin].Position.Y
-	kt.AgentTree[node].MaxY = kt.Agents[begin].Position.Y
+	nodeAgentTree.Begin = begin
+	nodeAgentTree.End = end
+	nodeAgentTree.MinX = beginAgent.Position.X
+	nodeAgentTree.MaxX = beginAgent.Position.X
+	nodeAgentTree.MinY = beginAgent.Position.Y
+	nodeAgentTree.MaxY = beginAgent.Position.Y
 
 	// i-1番目までのAgentとi番目のAgentのポジションを比較
 	for i := begin + 1; i < end; i++ {
-		kt.AgentTree[node].MaxX = float32(maxFn(float64(kt.AgentTree[node].MaxX), float64(kt.Agents[i].Position.X)))
-		kt.AgentTree[node].MinX = float32(minFn(float64(kt.AgentTree[node].MinX), float64(kt.Agents[i].Position.X)))
-		kt.AgentTree[node].MaxY = float32(maxFn(float64(kt.AgentTree[node].MaxY), float64(kt.Agents[i].Position.Y)))
-		kt.AgentTree[node].MinY = float32(minFn(float64(kt.AgentTree[node].MinY), float64(kt.Agents[i].Position.Y)))
+		iAgent := kt.Agents[i]
+
+		nodeAgentTree.MaxX = float32(maxFn(float64(nodeAgentTree.MaxX), float64(iAgent.Position.X)))
+		nodeAgentTree.MinX = float32(minFn(float64(nodeAgentTree.MinX), float64(iAgent.Position.X)))
+		nodeAgentTree.MaxY = float32(maxFn(float64(nodeAgentTree.MaxY), float64(iAgent.Position.Y)))
+		nodeAgentTree.MinY = float32(minFn(float64(nodeAgentTree.MinY), float64(iAgent.Position.Y)))
 	}
 	if end-begin > MaxLeafSize {
-		isVertical := kt.AgentTree[node].MaxX-kt.AgentTree[node].MinX > kt.AgentTree[node].MaxY-kt.AgentTree[node].MinY
+		isVertical := nodeAgentTree.MaxX-nodeAgentTree.MinX > nodeAgentTree.MaxY-nodeAgentTree.MinY
 		left := begin
 		right := end
 		var splitValue, leftPosition, rightPosition float32
 
 		if isVertical {
-			splitValue = 0.5 * (kt.AgentTree[node].MaxX + kt.AgentTree[node].MinX)
+			splitValue = 0.5 * (nodeAgentTree.MaxX + nodeAgentTree.MinX)
 		} else {
-			splitValue = 0.5 * (kt.AgentTree[node].MaxY + kt.AgentTree[node].MinY)
+			splitValue = 0.5 * (nodeAgentTree.MaxY + nodeAgentTree.MinY)
 		}
 
 		for {
@@ -204,11 +208,11 @@ func (kt *KdTree) BuildAgentTreeRecursive(begin int, end int, node int) {
 			right++
 		}
 
-		kt.AgentTree[node].Left = node + 1
-		kt.AgentTree[node].Right = node + 2*(left-begin)
+		nodeAgentTree.Left = node + 1
+		nodeAgentTree.Right = node + 2*(left-begin)
 
-		kt.BuildAgentTreeRecursive(begin, left, kt.AgentTree[node].Left)
-		kt.BuildAgentTreeRecursive(left, end, kt.AgentTree[node].Right)
+		kt.BuildAgentTreeRecursive(begin, left, nodeAgentTree.Left)
+		kt.BuildAgentTreeRecursive(left, end, nodeAgentTree.Right)
 	}
 }
 
