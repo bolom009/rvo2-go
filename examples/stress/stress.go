@@ -28,16 +28,20 @@ func main() {
 		obstacles                 = make([]Obstacle, 0)
 		totalFrames time.Duration = 0
 		stepsCount                = 0
-		//frameTime time.Duration = 0
+		frameTime   time.Duration = 0
 	)
+
+	_ = frameTime
 
 	for i := 0; i < 20; i++ {
 		shift := float32(i * 100)
+		rX := float32(randRange(-500, 500))
+		rY := float32(0) //float32(randRange(-500, 500))
 		obstacles = append(obstacles, Obstacle{
-			&rvo.Vector2{X: 0 + shift, Y: 0 + shift},
-			&rvo.Vector2{X: 0 + shift, Y: 70 + shift},
-			&rvo.Vector2{X: 70 + shift, Y: 70 + shift},
-			&rvo.Vector2{X: 70 + shift, Y: 0 + shift},
+			&rvo.Vector2{X: 0 + shift + rX, Y: 0 + shift + rY},
+			&rvo.Vector2{X: 0 + shift + rX, Y: 70 + shift + rY},
+			&rvo.Vector2{X: 70 + shift + rX, Y: 70 + shift + rY},
+			&rvo.Vector2{X: 70 + shift + rX, Y: 0 + shift + rY},
 		})
 	}
 
@@ -47,7 +51,7 @@ func main() {
 	//rl.InitWindow(width, height, "Example: Face2Face")
 
 	ticker := time.NewTicker(time.Second / 30)
-	//titleTicker := time.NewTicker(time.Second * 2)
+	//titleTicker := time.NewTicker(time.Millisecond * 500)
 	stopTicker := time.NewTimer(time.Second * 20)
 	p.Start()
 	for {
@@ -69,7 +73,7 @@ func main() {
 			t := time.Now()
 			setPreferredVelocities(sim)
 			sim.DoStep()
-			frameTime := time.Since(t)
+			frameTime = time.Since(t)
 			totalFrames += frameTime
 			stepsCount++
 		//case <-titleTicker.C:
@@ -85,9 +89,8 @@ func main() {
 }
 
 const (
-	avoidanceScale  float32 = 8.0
-	avoidanceRadius float32 = 15.0
-	agentRadius             = 5.0
+	avoidanceScale float32 = 8.0
+	agentRadius            = 5.0
 )
 
 func setupScenario(sim *rvo.RVOSimulator, obstacles []Obstacle) {
@@ -155,31 +158,6 @@ func setupScenario(sim *rvo.RVOSimulator, obstacles []Obstacle) {
 //	rl.EndDrawing()
 //}
 
-func setPreferredVelocities(sim *rvo.RVOSimulator) {
-	for _, agent := range sim.GetAgents() {
-		if !agent.IsActive() {
-			continue
-		}
-
-		iPos := agent.Position
-		iGoal := agent.Goal
-		if rvo.Abs(rvo.Sub(iPos, iGoal)) < 0.5 {
-			agent.PrefVelocity = rvo.NewVector2(0, 0)
-			continue
-		}
-
-		iSpeed := agent.MaxSpeed
-
-		goalDirection := rvo.Normalize(rvo.Sub(iGoal, iPos))
-		preferredVelocity := rvo.MulOne(goalDirection, iSpeed)
-		if rvo.Abs(preferredVelocity) > iSpeed {
-			preferredVelocity = rvo.MulOne(rvo.Normalize(preferredVelocity), iSpeed)
-		}
-
-		agent.PrefVelocity = preferredVelocity
-	}
-}
-
 //func eventSystem(camera *rl.Camera2D) {
 //	mouseWorldPos := rl.GetScreenToWorld2D(rl.GetMousePosition(), *camera)
 //
@@ -208,6 +186,31 @@ func setPreferredVelocities(sim *rvo.RVOSimulator) {
 //	}
 //}
 
+func setPreferredVelocities(sim *rvo.RVOSimulator) {
+	for _, agent := range sim.GetAgents() {
+		if !agent.IsActive() {
+			continue
+		}
+
+		iPos := agent.Position
+		iGoal := agent.Goal
+		if rvo.Abs(rvo.Sub(iPos, iGoal)) < 0.5 {
+			agent.PrefVelocity = rvo.NewVector2(0, 0)
+			continue
+		}
+
+		iSpeed := agent.MaxSpeed
+
+		goalDirection := rvo.Normalize(rvo.Sub(iGoal, iPos))
+		preferredVelocity := rvo.MulOne(goalDirection, iSpeed)
+		if rvo.Abs(preferredVelocity) > iSpeed {
+			preferredVelocity = rvo.MulOne(rvo.Normalize(preferredVelocity), iSpeed)
+		}
+
+		agent.PrefVelocity = preferredVelocity
+	}
+}
+
 func generateSpiralPositions(numPoints int, radiusStep, angleStep float32, offset rvo.Vector2) []*rvo.Vector2 {
 	positions := make([]*rvo.Vector2, numPoints)
 
@@ -229,4 +232,8 @@ func generateSpiralPositions(numPoints int, radiusStep, angleStep float32, offse
 	}
 
 	return positions
+}
+
+func randRange(min, max int) int {
+	return rand.Intn(max-min) + min
 }

@@ -18,8 +18,6 @@ func Benchmark_MulOne(b *testing.B) {
 	}
 }
 
-// Benchmark_Pow-16    	        99041770	        12.16 ns/op	       0 B/op	       0 allocs/op
-// Benchmark_PowInline-16    	1000000000	        0.2204 ns/op	       0 B/op	       0 allocs/op
 func Benchmark_Pow(b *testing.B) {
 	fmt.Println(math.Pow(math.Pi, 2))
 
