@@ -83,8 +83,10 @@ func (kt *KdTree) BuildAgentTree() {
 
 			kt.Agents = append(kt.Agents, agent)
 		}
+	}
 
-		lAgents := len(kt.Agents)
+	lAgents := len(kt.Agents)
+	if lAgents > 0 {
 		eLen := 2*lAgents - 1
 		oldNewLenEquals := len(kt.AgentTree) == eLen
 
@@ -109,10 +111,8 @@ func (kt *KdTree) BuildAgentTree() {
 				agentTree.MinY = 0
 			}
 		}
-	}
 
-	if len(kt.Agents) != 0 {
-		kt.BuildAgentTreeRecursive(0, len(kt.Agents), 0)
+		kt.BuildAgentTreeRecursive(0, lAgents, 0)
 	}
 }
 
