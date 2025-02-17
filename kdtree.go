@@ -86,19 +86,19 @@ func (kt *KdTree) BuildAgentTree() {
 
 		lAgents := len(kt.Agents)
 		eLen := 2*lAgents - 1
+		oldNewLenEquals := len(kt.AgentTree) == eLen
 
-		if len(kt.AgentTree) >= eLen {
-			kt.AgentTree = kt.AgentTree[:eLen]
-		} else {
+		if !oldNewLenEquals {
 			kt.AgentTree = make([]*AgentTreeNode, eLen)
 		}
 
 		// AgentTreeを2*len(kt.Agents)-1で初期化
 		for i := 0; i < eLen; i++ {
-			agentTree := kt.AgentTree[i]
-			if agentTree == nil {
+			if !oldNewLenEquals {
 				kt.AgentTree[i] = NewAgentTreeNode()
 			} else {
+				// reset instead of init, bcos we are working with the same length of objects
+				agentTree := kt.AgentTree[i]
 				agentTree.Begin = 0
 				agentTree.End = 0
 				agentTree.Left = 0

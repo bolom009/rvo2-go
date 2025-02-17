@@ -15,7 +15,6 @@ import (
 
 type Obstacle []*rvo.Vector2
 
-// AVG: 372.028µs
 func main() {
 	runtime.GOMAXPROCS(1)
 
@@ -28,7 +27,6 @@ func main() {
 		camera       = rl.NewCamera2D(
 			rl.NewVector2(0, 0), rl.NewVector2(float32(width/2)*-1, float32(height/2)*-1), 0, 1.0,
 		)
-		p                         = profiler.New(profiler.Conf{}, profiler.Cpu, profiler.Mem)
 		obstacles                 = make([]Obstacle, 0)
 		totalFrames time.Duration = 0
 		stepsCount                = 0
@@ -57,6 +55,7 @@ func main() {
 	ticker := time.NewTicker(time.Second / 30)
 	titleTicker := time.NewTicker(time.Millisecond * 500)
 	stopTicker := time.NewTimer(time.Second * 20)
+	p := profiler.New(profiler.Conf{}, profiler.Cpu, profiler.Mem)
 	p.Start()
 	for {
 		if rl.WindowShouldClose() {
@@ -84,7 +83,7 @@ func main() {
 			rl.SetWindowTitle(fmt.Sprintf("Example: Face2Face - %s", frameTime.String()))
 		case <-stopTicker.C:
 			fmt.Printf("AVG: %v\n", (totalFrames / time.Duration(stepsCount)).String())
-			p.Stop()
+			//p.Stop()
 			return
 		}
 	}
